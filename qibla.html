@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0E1330">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Qibla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0E1330;
+    --night-deep:#070A1B;
+    --plate:#161C3E;
+    --brass:#C8A15A;
+    --brass-lit:#F0D399;
+    --ivory:#EDE6D6;
+    --slate:#7A82A6;
+    --jade:#4FB48A;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --display:"Amiri",Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%,#1B2350 0%,transparent 60%),
+      radial-gradient(90% 60% at 50% 110%,#141A3C 0%,transparent 65%),
+      var(--night-deep);
+    color:var(--ivory);
+    font-family:var(--ui);
+    -webkit-user-select:none;user-select:none;
+    overflow:hidden;
+  }
+  #app{
+    height:100dvh;height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 14px);
+    max-width:520px;margin:0 auto;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{width:100%;display:flex;align-items:baseline;justify-content:space-between;
+    padding-bottom:10px;border-bottom:1px solid rgba(200,161,90,.22);flex:0 0 auto}
+  .ar{font-family:var(--display);font-size:26px;line-height:1;color:var(--brass-lit)}
+  .lat{font-family:var(--mono);font-size:11px;letter-spacing:.34em;color:var(--slate);text-transform:uppercase}
+
+  /* ---------- gate ---------- */
+  .gate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:22px;width:100%}
+  .gate p{color:var(--slate);font-size:15px;line-height:1.55;max-width:19em}
+  .gate .lede{color:var(--ivory);font-family:var(--display);font-size:24px;line-height:1.35;max-width:14em}
+  button.primary{
+    font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--night-deep);background:linear-gradient(180deg,var(--brass-lit),var(--brass));
+    border:0;border-radius:999px;padding:16px 34px;cursor:pointer;
+    box-shadow:0 6px 26px rgba(200,161,90,.28);
+    transition:transform .18s var(--ease),box-shadow .18s var(--ease);
+  }
+  button.primary:active{transform:scale(.97);box-shadow:0 3px 14px rgba(200,161,90,.22)}
+  button.primary:focus-visible,input:focus-visible{outline:2px solid var(--brass-lit);outline-offset:3px}
+  .fine{font-size:12px;color:#5C6389;max-width:22em;line-height:1.5}
+
+  /* ---------- instrument ---------- */
+  .stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:6px}
+  .dialwrap{position:relative;width:min(80vw,330px);aspect-ratio:1}
+  svg{width:100%;height:100%;display:block;overflow:visible}
+  .tick{stroke:#4A527C;stroke-width:1.4}
+  .tick.major{stroke:var(--brass);stroke-width:2}
+  .card{font-family:var(--mono);font-size:13px;font-weight:700;fill:var(--ivory);letter-spacing:.08em}
+  .card.n{fill:var(--brass-lit)}
+  .num{font-family:var(--mono);font-size:9px;fill:#5C6389}
+  .star{fill:none;stroke:var(--brass);stroke-width:.7;opacity:.16}
+  .ring{fill:none;stroke:rgba(200,161,90,.2);stroke-width:1}
+  .plate{fill:var(--plate)}
+  .ray{stroke:var(--brass);stroke-width:2;opacity:.55;transition:stroke .35s var(--ease),opacity .35s var(--ease)}
+  .kaaba-body{fill:#0B0E22;stroke:var(--brass);stroke-width:1.5;transition:stroke .35s var(--ease)}
+  .kaaba-band{stroke:var(--brass-lit);stroke-width:2;transition:stroke .35s var(--ease)}
+  .halo{fill:none;stroke:var(--jade);stroke-width:1.5;opacity:0;transition:opacity .35s var(--ease)}
+
+  .index{position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;
+    border-top:12px solid var(--brass-lit);
+    filter:drop-shadow(0 0 6px rgba(240,211,153,.5))}
+
+  /* centre readout */
+  .readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    pointer-events:none;gap:2px}
+  .deg{font-family:var(--mono);font-size:44px;font-weight:600;letter-spacing:-.02em;line-height:1;
+    color:var(--ivory);font-variant-numeric:tabular-nums;transition:color .35s var(--ease)}
+  .compasspt{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--slate)}
+
+  .cue{font-family:var(--display);font-size:22px;line-height:1.3;text-align:center;
+    color:var(--brass-lit);min-height:1.4em;transition:color .35s var(--ease)}
+  .cue small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--slate);margin-top:8px}
+
+  /* tilted state: the reading is unreliable, so the instrument goes quiet */
+  #dial,.ray,.kaaba-body,.kaaba-band,.index{transition:opacity .3s var(--ease),stroke .35s var(--ease),border-top-color .35s var(--ease)}
+  .tilted #dial{opacity:.4}
+  .tilted .ray{stroke:var(--slate);opacity:.35}
+  .tilted .kaaba-body,.tilted .kaaba-band{stroke:var(--slate)}
+  .tilted .index{border-top-color:var(--slate);filter:none}
+  .tilted .deg{color:var(--slate)}
+  .tilted .cue{color:var(--slate)}
+  .level{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+    width:52px;height:52px;border:1px solid rgba(122,130,166,.35);border-radius:50%;
+    opacity:0;transition:opacity .3s var(--ease);pointer-events:none}
+  .tilted .level{opacity:1}
+  .level::before{content:"";position:absolute;inset:0;margin:auto;width:8px;height:8px;
+    border-radius:50%;background:var(--slate)}
+  .bubble{position:absolute;width:14px;height:14px;border-radius:50%;
+    border:1.5px solid var(--brass-lit);left:50%;top:50%;margin:-7px 0 0 -7px;
+    transition:transform .12s linear}
+
+  /* aligned state */
+  .aligned .ray{stroke:var(--jade);opacity:1}
+  .aligned .kaaba-body,.aligned .kaaba-band{stroke:var(--jade)}
+  .aligned .halo{opacity:.9}
+  .aligned .deg{color:var(--jade)}
+  .aligned .cue{color:var(--jade)}
+  .aligned .index{border-top-color:var(--jade);filter:drop-shadow(0 0 8px rgba(79,180,138,.6))}
+
+  /* ---------- data plate ---------- */
+  .plate-data{width:100%;flex:0 0 auto;border-top:1px solid rgba(200,161,90,.22);padding-top:12px;
+    display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+  .cellfull{grid-column:1/-1}
+  .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#5C6389;display:block;margin-bottom:3px}
+  .v{font-family:var(--mono);font-size:13px;color:var(--ivory);font-variant-numeric:tabular-nums}
+  .note{font-size:11.5px;color:#5C6389;line-height:1.5;grid-column:1/-1}
+
+  /* ---------- manual entry ---------- */
+  #manual{justify-content:flex-start;padding-top:22px;gap:12px}
+  .search{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(200,161,90,.3);
+    border-radius:10px;color:var(--ivory);font-family:var(--ui);font-size:16px;padding:13px 14px}
+  .search::placeholder{color:#4F5678}
+  .results{list-style:none;width:100%;max-height:34vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .results li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    padding:13px 2px;border-bottom:1px solid rgba(200,161,90,.14);cursor:pointer}
+  .results li:active{background:rgba(200,161,90,.08)}
+  .results .city{font-size:16px;color:var(--ivory)}
+  .results .cc{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--slate);white-space:nowrap}
+  button.link{background:none;border:0;color:var(--brass);font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.16em;text-transform:uppercase;cursor:pointer;padding:6px}
+  .manual{display:flex;gap:8px;width:100%;margin-top:4px}
+  .manual input{flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(200,161,90,.3);
+    border-radius:8px;color:var(--ivory);font-family:var(--mono);font-size:14px;padding:11px 10px;text-align:center}
+  .manual input::placeholder{color:#4F5678}
+  .manual button{background:transparent;border:1px solid var(--brass);color:var(--brass-lit);
+    border-radius:8px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;padding:0 14px;cursor:pointer;text-transform:uppercase}
+  .msg{font-size:13px;color:#E0A9A9;line-height:1.5;text-align:center}
+
+  .hide{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+  @media (max-height:640px){
+    .dialwrap{width:min(64vw,260px)}
+    .deg{font-size:36px}
+    .cue{font-size:19px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="masthead">
+    <span class="ar">القِبلة</span>
+    <span class="lat">Qibla</span>
+  </header>
+
+  <!-- GATE -->
+  <section class="gate" id="gate">
+    <p class="lede">Find the direction of the Kaaba from wherever you are standing.</p>
+    <button class="primary" id="startBtn">Find the Qibla</button>
+    <p class="fine">Needs your location and your phone's compass. Everything is calculated on this device — nothing is stored or sent anywhere.</p>
+  </section>
+
+  <!-- LOCATING -->
+  <section class="gate hide" id="locating">
+    <p class="lede" id="locatingText">Reading your position…</p>
+  </section>
+
+  <!-- MANUAL -->
+  <section class="gate hide" id="manual">
+    <p class="msg" id="manualMsg">Location unavailable.</p>
+    <input id="cityQ" class="search" inputmode="search" autocomplete="off" autocorrect="off"
+           spellcheck="false" placeholder="Search for your city">
+    <ul class="results" id="results"></ul>
+    <button class="link" id="coordToggle">Enter coordinates instead</button>
+    <div class="manual hide" id="coordRow">
+      <input id="mLat" inputmode="decimal" placeholder="Latitude">
+      <input id="mLng" inputmode="decimal" placeholder="Longitude">
+      <button id="mGo">Use</button>
+    </div>
+    <p class="fine" id="diag"></p>
+  </section>
+
+  <!-- INSTRUMENT -->
+  <section class="stage hide" id="stage">
+    <div class="dialwrap">
+      <svg viewBox="0 0 300 300" aria-hidden="true">
+        <circle class="plate" cx="150" cy="150" r="132"/>
+        <circle class="ring" cx="150" cy="150" r="132"/>
+        <circle class="ring" cx="150" cy="150" r="104"/>
+        <g id="dial"></g>
+        <g id="qibla">
+          <line class="ray" x1="150" y1="150" x2="150" y2="52"/>
+          <circle class="halo" cx="150" cy="42" r="19"/>
+          <g id="kaabaGlyph">
+            <rect class="kaaba-body" x="139" y="31" width="22" height="22" rx="2"/>
+            <line class="kaaba-band" x1="139" y1="39" x2="161" y2="39"/>
+          </g>
+        </g>
+        <circle cx="150" cy="150" r="3" fill="#C8A15A"/>
+      </svg>
+      <div class="index"></div>
+      <div class="readout">
+        <span class="deg" id="degOut">—</span>
+        <span class="compasspt" id="ptOut">FACING</span>
+      </div>
+      <div class="level" id="level"><span class="bubble" id="bubble"></span></div>
+    </div>
+    <p class="cue" id="cue">Hold your phone flat<small id="cueSub">calibrating compass</small></p>
+  </section>
+
+  <!-- DATA PLATE -->
+  <footer class="plate-data hide" id="dataPlate">
+    <div><span class="k">Qibla bearing</span><span class="v" id="dBearing">—</span></div>
+    <div><span class="k">Distance to Mecca</span><span class="v" id="dDist">—</span></div>
+    <div class="cellfull"><span class="k">Your position</span><span class="v" id="dPos">—</span></div>
+    <div><span class="k">Heading from</span><span class="v" id="dSrc">—</span></div>
+    <div><span class="k">Tilt from flat</span><span class="v" id="dTilt">—</span></div>
+    <p class="note" id="dNote">Move away from metal, magnets and cars, then wave the phone in a figure‑8 to calibrate. Confirm with a local mosque before relying on it for prayer.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var KAABA = { lat: 21.4224779, lng: 39.8251832 };
+  var ALIGN_TOLERANCE = 3;            // degrees
+  var TILT_LIMIT = 28;                // degrees off flat before the reading is untrustworthy
+  var POINTS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+
+  /* Offline city table: name, country, lat, lng. No network, no permissions. */
+  var CITIES = ("Mecca|Saudi Arabia|21.4225|39.8262;Medina|Saudi Arabia|24.4686|39.6142;"+
+  "Riyadh|Saudi Arabia|24.7136|46.6753;Jeddah|Saudi Arabia|21.4858|39.1925;Dammam|Saudi Arabia|26.4207|50.0888;"+
+  "Dubai|UAE|25.2048|55.2708;Abu Dhabi|UAE|24.4539|54.3773;Sharjah|UAE|25.3463|55.4209;"+
+  "Doha|Qatar|25.2854|51.5310;Kuwait City|Kuwait|29.3759|47.9774;Manama|Bahrain|26.2285|50.5860;"+
+  "Muscat|Oman|23.5880|58.3829;Sanaa|Yemen|15.3694|44.1910;Baghdad|Iraq|33.3152|44.3661;"+
+  "Basra|Iraq|30.5085|47.7804;Erbil|Iraq|36.1911|44.0091;Tehran|Iran|35.6892|51.3890;"+
+  "Mashhad|Iran|36.2605|59.6168;Isfahan|Iran|32.6546|51.6680;Amman|Jordan|31.9454|35.9284;"+
+  "Damascus|Syria|33.5138|36.2765;Aleppo|Syria|36.2021|37.1343;Beirut|Lebanon|33.8938|35.5018;"+
+  "Jerusalem|Palestine|31.7683|35.2137;Gaza|Palestine|31.5017|34.4668;Istanbul|Turkey|41.0082|28.9784;"+
+  "Ankara|Turkey|39.9334|32.8597;Izmir|Turkey|38.4237|27.1428;Baku|Azerbaijan|40.4093|49.8671;"+
+  "Cairo|Egypt|30.0444|31.2357;Alexandria|Egypt|31.2001|29.9187;Khartoum|Sudan|15.5007|32.5599;"+
+  "Tripoli|Libya|32.8872|13.1913;Tunis|Tunisia|36.8065|10.1815;Algiers|Algeria|36.7538|3.0588;"+
+  "Oran|Algeria|35.6971|-0.6308;Casablanca|Morocco|33.5731|-7.5898;Rabat|Morocco|34.0209|-6.8416;"+
+  "Marrakesh|Morocco|31.6295|-7.9811;Fez|Morocco|34.0181|-5.0078;Nouakchott|Mauritania|18.0735|-15.9582;"+
+  "Lagos|Nigeria|6.5244|3.3792;Kano|Nigeria|12.0022|8.5920;Abuja|Nigeria|9.0765|7.3986;"+
+  "Accra|Ghana|5.6037|-0.1870;Dakar|Senegal|14.7167|-17.4677;Bamako|Mali|12.6392|-8.0029;"+
+  "Niamey|Niger|13.5116|2.1254;Ouagadougou|Burkina Faso|12.3714|-1.5197;Addis Ababa|Ethiopia|9.0320|38.7469;"+
+  "Mogadishu|Somalia|2.0469|45.3182;Nairobi|Kenya|-1.2921|36.8219;Mombasa|Kenya|-4.0435|39.6682;"+
+  "Dar es Salaam|Tanzania|-6.7924|39.2083;Kampala|Uganda|0.3476|32.5825;Johannesburg|South Africa|-26.2041|28.0473;"+
+  "Cape Town|South Africa|-33.9249|18.4241;Durban|South Africa|-29.8587|31.0218;"+
+  "Karachi|Pakistan|24.8607|67.0011;Lahore|Pakistan|31.5204|74.3587;Islamabad|Pakistan|33.6844|73.0479;"+
+  "Peshawar|Pakistan|34.0151|71.5249;Quetta|Pakistan|30.1798|66.9750;Multan|Pakistan|30.1575|71.5249;"+
+  "Faisalabad|Pakistan|31.4504|73.1350;Delhi|India|28.6139|77.2090;Mumbai|India|19.0760|72.8777;"+
+  "Hyderabad|India|17.3850|78.4867;Kolkata|India|22.5726|88.3639;Chennai|India|13.0827|80.2707;"+
+  "Bengaluru|India|12.9716|77.5946;Lucknow|India|26.8467|80.9462;Ahmedabad|India|23.0225|72.5714;"+
+  "Srinagar|India|34.0837|74.7973;Dhaka|Bangladesh|23.8103|90.4125;Chittagong|Bangladesh|22.3569|91.7832;"+
+  "Kabul|Afghanistan|34.5553|69.2075;Kandahar|Afghanistan|31.6289|65.7372;Colombo|Sri Lanka|6.9271|79.8612;"+
+  "Male|Maldives|4.1755|73.5093;Kathmandu|Nepal|27.7172|85.3240;Tashkent|Uzbekistan|41.2995|69.2401;"+
+  "Samarkand|Uzbekistan|39.6270|66.9750;Almaty|Kazakhstan|43.2220|76.8512;Astana|Kazakhstan|51.1694|71.4491;"+
+  "Bishkek|Kyrgyzstan|42.8746|74.5698;Dushanbe|Tajikistan|38.5598|68.7870;Ashgabat|Turkmenistan|37.9601|58.3261;"+
+  "Jakarta|Indonesia|-6.2088|106.8456;Surabaya|Indonesia|-7.2575|112.7521;Bandung|Indonesia|-6.9175|107.6191;"+
+  "Medan|Indonesia|3.5952|98.6722;Makassar|Indonesia|-5.1477|119.4327;Banda Aceh|Indonesia|5.5483|95.3238;"+
+  "Kuala Lumpur|Malaysia|3.1390|101.6869;Johor Bahru|Malaysia|1.4927|103.7414;Penang|Malaysia|5.4141|100.3288;"+
+  "Singapore|Singapore|1.3521|103.8198;Bangkok|Thailand|13.7563|100.5018;Manila|Philippines|14.5995|120.9842;"+
+  "Davao|Philippines|7.1907|125.4553;Ho Chi Minh City|Vietnam|10.8231|106.6297;Phnom Penh|Cambodia|11.5564|104.9282;"+
+  "Yangon|Myanmar|16.8661|96.1951;Bandar Seri Begawan|Brunei|4.9031|114.9398;"+
+  "Beijing|China|39.9042|116.4074;Shanghai|China|31.2304|121.4737;Urumqi|China|43.8256|87.6168;"+
+  "Guangzhou|China|23.1291|113.2644;Hong Kong|China|22.3193|114.1694;Tokyo|Japan|35.6762|139.6503;"+
+  "Osaka|Japan|34.6937|135.5023;Seoul|South Korea|37.5665|126.9780;Taipei|Taiwan|25.0330|121.5654;"+
+  "London|United Kingdom|51.5074|-0.1278;Birmingham|United Kingdom|52.4862|-1.8904;"+
+  "Manchester|United Kingdom|53.4808|-2.2426;Leeds|United Kingdom|53.8008|-1.5491;"+
+  "Glasgow|United Kingdom|55.8642|-4.2518;Dublin|Ireland|53.3498|-6.2603;Paris|France|48.8566|2.3522;"+
+  "Marseille|France|43.2965|5.3698;Lyon|France|45.7640|4.8357;Berlin|Germany|52.5200|13.4050;"+
+  "Hamburg|Germany|53.5511|9.9937;Munich|Germany|48.1351|11.5820;Cologne|Germany|50.9375|6.9603;"+
+  "Frankfurt|Germany|50.1109|8.6821;Amsterdam|Netherlands|52.3676|4.9041;Rotterdam|Netherlands|51.9244|4.4777;"+
+  "Brussels|Belgium|50.8503|4.3517;Vienna|Austria|48.2082|16.3738;Zurich|Switzerland|47.3769|8.5417;"+
+  "Stockholm|Sweden|59.3293|18.0686;Oslo|Norway|59.9139|10.7522;Copenhagen|Denmark|55.6761|12.5683;"+
+  "Helsinki|Finland|60.1699|24.9384;Madrid|Spain|40.4168|-3.7038;Barcelona|Spain|41.3874|2.1686;"+
+  "Lisbon|Portugal|38.7223|-9.1393;Rome|Italy|41.9028|12.4964;Milan|Italy|45.4642|9.1900;"+
+  "Athens|Greece|37.9838|23.7275;Sarajevo|Bosnia|43.8563|18.4131;Pristina|Kosovo|42.6629|21.1655;"+
+  "Tirana|Albania|41.3275|19.8187;Skopje|North Macedonia|41.9973|21.4280;Sofia|Bulgaria|42.6977|23.3219;"+
+  "Bucharest|Romania|44.4268|26.1025;Warsaw|Poland|52.2297|21.0122;Prague|Czechia|50.0755|14.4378;"+
+  "Budapest|Hungary|47.4979|19.0402;Moscow|Russia|55.7558|37.6173;Kazan|Russia|55.8304|49.0661;"+
+  "Saint Petersburg|Russia|59.9311|30.3609;Kyiv|Ukraine|50.4501|30.5234;"+
+  "New York|United States|40.7128|-74.0060;Chicago|United States|41.8781|-87.6298;"+
+  "Detroit|United States|42.3314|-83.0458;Dearborn|United States|42.3223|-83.1763;"+
+  "Houston|United States|29.7604|-95.3698;Dallas|United States|32.7767|-96.7970;"+
+  "Los Angeles|United States|34.0522|-118.2437;San Francisco|United States|37.7749|-122.4194;"+
+  "Seattle|United States|47.6062|-122.3321;Atlanta|United States|33.7490|-84.3880;"+
+  "Boston|United States|42.3601|-71.0589;Philadelphia|United States|39.9526|-75.1652;"+
+  "Washington|United States|38.9072|-77.0369;Miami|United States|25.7617|-80.1918;"+
+  "Minneapolis|United States|44.9778|-93.2650;Phoenix|United States|33.4484|-112.0740;"+
+  "Denver|United States|39.7392|-104.9903;Toronto|Canada|43.6532|-79.3832;Montreal|Canada|45.5017|-73.5673;"+
+  "Vancouver|Canada|49.2827|-123.1207;Calgary|Canada|51.0447|-114.0719;Ottawa|Canada|45.4215|-75.6972;"+
+  "Mexico City|Mexico|19.4326|-99.1332;Sao Paulo|Brazil|-23.5505|-46.6333;"+
+  "Rio de Janeiro|Brazil|-22.9068|-43.1729;Buenos Aires|Argentina|-34.6037|-58.3816;"+
+  "Santiago|Chile|-33.4489|-70.6693;Lima|Peru|-12.0464|-77.0428;Bogota|Colombia|4.7110|-74.0721;"+
+  "Caracas|Venezuela|10.4806|-66.9036;Paramaribo|Suriname|5.8520|-55.2038;Georgetown|Guyana|6.8013|-58.1551;"+
+  "Sydney|Australia|-33.8688|151.2093;Melbourne|Australia|-37.8136|144.9631;Perth|Australia|-31.9505|115.8605;"+
+  "Brisbane|Australia|-27.4698|153.0251;Auckland|New Zealand|-36.8485|174.7633")
+  .split(";").map(function(r){ var p=r.split("|");
+    return { n:p[0], c:p[1], lat:parseFloat(p[2]), lng:parseFloat(p[3]), s:(p[0]+" "+p[1]).toLowerCase() }; });
+
+  var $ = function(id){ return document.getElementById(id); };
+  var app = $("app");
+
+  var state = {
+    lat:null, lng:null, acc:null,
+    bearing:null, distance:null,
+    heading:null, smoothed:null,
+    tilt:null, tiltX:0, tiltY:0, source:null,
+    hasCompass:false, aligned:false, tilted:false
+  };
+
+  /* ---------- geometry ---------- */
+  function rad(d){ return d*Math.PI/180; }
+  function deg(r){ return r*180/Math.PI; }
+
+  function bearingToKaaba(lat,lng){
+    var p1=rad(lat), p2=rad(KAABA.lat), dl=rad(KAABA.lng-lng);
+    var y=Math.sin(dl)*Math.cos(p2);
+    var x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+    return (deg(Math.atan2(y,x))+360)%360;
+  }
+  function distanceToKaaba(lat,lng){
+    var R=6371, p1=rad(lat), p2=rad(KAABA.lat);
+    var dp=rad(KAABA.lat-lat), dl=rad(KAABA.lng-lng);
+    var a=Math.sin(dp/2)*Math.sin(dp/2)+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));
+  }
+  function pointName(b){ return POINTS[Math.round(b/22.5)%16]; }
+  function signedDiff(a,b){ return ((b-a+540)%360)-180; }
+  function lerpAngle(a,b,t){ return (a+signedDiff(a,b)*t+360)%360; }
+
+  /* ---------- draw the dial ---------- */
+  (function buildDial(){
+    var g=$("dial"), ns="http://www.w3.org/2000/svg", out="";
+    for(var a=0;a<360;a+=5){
+      var major=(a%30===0);
+      var r1=132, r2=major?116:124;
+      var rr=rad(a-90);
+      var x1=150+r1*Math.cos(rr), y1=150+r1*Math.sin(rr);
+      var x2=150+r2*Math.cos(rr), y2=150+r2*Math.sin(rr);
+      out+='<line class="tick'+(major?' major':'')+'" x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+
+           '" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'"/>';
+    }
+    // degree numerals every 30 degrees, skipping the cardinals
+    for(var d=0;d<360;d+=30){
+      if(d%90===0) continue;
+      var r=rad(d-90), x=150+100*Math.cos(r), y=150+100*Math.sin(r);
+      out+='<text class="num" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+
+           '" text-anchor="middle" dominant-baseline="middle" transform="rotate('+d+' '+x.toFixed(1)+' '+y.toFixed(1)+')">'+d+'</text>';
+    }
+    // cardinals
+    var cards=[["N",0],["E",90],["S",180],["W",270]];
+    for(var i=0;i<4;i++){
+      var cr=rad(cards[i][1]-90), cx=150+98*Math.cos(cr), cy=150+98*Math.sin(cr);
+      out+='<text class="card'+(i===0?" n":"")+'" x="'+cx.toFixed(1)+'" y="'+cy.toFixed(1)+
+           '" text-anchor="middle" dominant-baseline="middle" transform="rotate('+cards[i][1]+' '+cx.toFixed(1)+' '+cy.toFixed(1)+')">'+cards[i][0]+'</text>';
+    }
+    // rub el hizb: two squares, one rotated 45 degrees
+    out+='<rect class="star" x="105" y="105" width="90" height="90"/>'+
+         '<rect class="star" x="105" y="105" width="90" height="90" transform="rotate(45 150 150)"/>';
+    g.innerHTML=out;
+    void ns;
+  })();
+
+  /* ---------- render loop ---------- */
+  var dialEl=$("dial"), qiblaEl=$("qibla"), glyphEl=$("kaabaGlyph");
+
+  function render(){
+    if(state.bearing===null) return;
+
+    if(state.hasCompass && state.heading!==null){
+      state.smoothed = (state.smoothed===null) ? state.heading : lerpAngle(state.smoothed,state.heading,0.18);
+    }
+    var h = state.hasCompass && state.smoothed!==null ? state.smoothed : 0;
+    var rel = (state.bearing - h + 360)%360;
+
+    dialEl.setAttribute("transform","rotate("+(-h).toFixed(2)+" 150 150)");
+    qiblaEl.setAttribute("transform","rotate("+rel.toFixed(2)+" 150 150)");
+    glyphEl.setAttribute("transform","rotate("+(-rel).toFixed(2)+" 150 42)");
+
+    var off = signedDiff(0, rel);          // -180..180, 0 = facing qibla
+    var tooTilted = state.hasCompass && state.tilt!==null && state.tilt > TILT_LIMIT;
+    var nowAligned = state.hasCompass && !tooTilted && Math.abs(off) <= ALIGN_TOLERANCE;
+
+    if(tooTilted!==state.tilted){
+      state.tilted=tooTilted;
+      app.classList.toggle("tilted",tooTilted);
+    }
+    if(state.tilt!==null){
+      $("dTilt").textContent = Math.round(state.tilt)+"\u00B0";
+      if(tooTilted){
+        var bx=Math.max(-18,Math.min(18,state.tiltX*0.7));
+        var by=Math.max(-18,Math.min(18,state.tiltY*0.7));
+        $("bubble").style.transform="translate("+bx.toFixed(1)+"px,"+by.toFixed(1)+"px)";
+      }
+    }
+
+    if(state.hasCompass){
+      $("degOut").textContent = Math.round(h)+"\u00B0";
+      $("ptOut").textContent = "FACING "+pointName(h);
+      if(tooTilted){
+        $("cue").innerHTML = "Hold the phone flatter<small>tilt "+Math.round(state.tilt)+
+                             "\u00B0 \u2014 reading is off</small>";
+      }else if(nowAligned){
+        $("cue").innerHTML = "Facing the Qibla<small>hold this direction</small>";
+      }else{
+        var side = off>0 ? "right" : "left";
+        var arrow = off>0 ? "\u2192" : "\u2190";
+        $("cue").innerHTML = "Turn "+Math.round(Math.abs(off))+"\u00B0 "+side+" "+arrow+
+                             "<small>toward the Kaaba</small>";
+      }
+    }
+
+    if(nowAligned!==state.aligned){
+      state.aligned=nowAligned;
+      app.classList.toggle("aligned",nowAligned);
+      if(nowAligned && navigator.vibrate) navigator.vibrate(35);
+    }
+    requestAnimationFrame(render);
+  }
+
+  /* ---------- compass ---------- */
+  var compassSeen=false, sensorObj=null;
+
+  function markLive(src){
+    state.source=src;
+    if(!compassSeen){
+      compassSeen=true; state.hasCompass=true;
+      $("dSrc").textContent=src;
+    }
+  }
+
+  /* Preferred path: fused orientation sensor (Chrome / Android).
+     Gives a quaternion off the accelerometer + gyroscope + magnetometer,
+     already resolved in screen coordinates. */
+  function readQuaternion(q){
+    var x=q[0], y=q[1], z=q[2], w=q[3];
+    // heading = bearing of the device's +Y axis, clockwise from north
+    var east  = 2*(x*y - z*w);
+    var north = 1 - 2*(x*x + z*z);
+    state.heading=(deg(Math.atan2(east,north))+360)%360;
+    // the device's +Z axis vs. world up gives tilt off flat
+    var up=Math.max(-1,Math.min(1,1-2*(x*x + y*y)));
+    state.tilt=deg(Math.acos(up));
+    state.tiltX=deg(Math.asin(Math.max(-1,Math.min(1,2*(x*z + y*w)))));
+    state.tiltY=deg(Math.asin(Math.max(-1,Math.min(1,2*(y*z - x*w)))));
+    markLive("orientation sensor");
+  }
+
+  function tryOrientationSensor(done){
+    if(typeof window.AbsoluteOrientationSensor!=="function"){ done(false); return; }
+    var settled=false, s;
+    function finish(ok){
+      if(settled) return;
+      settled=true;
+      if(!ok && s){ try{ s.stop(); }catch(e){} }
+      done(ok);
+    }
+    try{
+      s=new AbsoluteOrientationSensor({ frequency:30, referenceFrame:"screen" });
+    }catch(e){ finish(false); return; }
+
+    s.addEventListener("error",function(){ finish(false); });
+    s.addEventListener("reading",function(){
+      if(!s.quaternion) return;
+      readQuaternion(s.quaternion);
+      finish(true);
+    });
+    try{ s.start(); }catch(e){ finish(false); return; }
+    sensorObj=s;
+    setTimeout(function(){ finish(false); },2000);
+  }
+
+  function onOrient(e){
+    // tilt off flat, from the event's pitch and roll
+    if(typeof e.beta==="number" && typeof e.gamma==="number"){
+      var up=Math.cos(rad(e.beta))*Math.cos(rad(e.gamma));
+      state.tilt=deg(Math.acos(Math.max(-1,Math.min(1,up))));
+      state.tiltX=e.gamma; state.tiltY=e.beta;
+    }
+    var h=null;
+    if(typeof e.webkitCompassHeading==="number" && !isNaN(e.webkitCompassHeading)){
+      h=e.webkitCompassHeading;                       // iOS: already true north
+    }else if(e.absolute===true && typeof e.alpha==="number"){
+      h=360-e.alpha;                                  // Android absolute
+    }else if(typeof e.alpha==="number" && !compassSeen){
+      h=360-e.alpha;                                  // last resort, relative
+    }
+    if(h===null || isNaN(h)) return;
+
+    var so=0;
+    if(screen.orientation && typeof screen.orientation.angle==="number") so=screen.orientation.angle;
+    else if(typeof window.orientation==="number") so=window.orientation;
+    h=(h+so+360)%360;
+
+    state.heading=h;
+    markLive(e.webkitCompassHeading!=null ? "device compass" : "orientation event");
+  }
+
+  function attachCompassEvents(){
+    window.addEventListener("deviceorientationabsolute",onOrient,true);
+    window.addEventListener("deviceorientation",onOrient,true);
+    setTimeout(function(){
+      if(!compassSeen) showNoCompass();
+    },2600);
+  }
+
+  /* Try the fused sensor first, fall back to the orientation events. */
+  function startHeading(){
+    tryOrientationSensor(function(ok){
+      if(!ok) attachCompassEvents();
+    });
+  }
+
+  function showNoCompass(){
+    state.hasCompass=false;
+    $("dSrc").textContent="unavailable";
+    $("degOut").textContent=Math.round(state.bearing)+"\u00B0";
+    $("ptOut").textContent=pointName(state.bearing);
+    $("cue").innerHTML="Face true north, then turn "+Math.round(state.bearing)+
+      "\u00B0 clockwise<small>no compass on this device</small>";
+  }
+
+  /* ---------- location ---------- */
+  function useLocation(lat,lng,acc,label){
+    state.lat=lat; state.lng=lng; state.acc=acc;
+    state.bearing=bearingToKaaba(lat,lng);
+    state.distance=distanceToKaaba(lat,lng);
+
+    $("locating").classList.add("hide");
+    $("manual").classList.add("hide");
+    $("stage").classList.remove("hide");
+    $("dataPlate").classList.remove("hide");
+
+    $("dBearing").textContent=state.bearing.toFixed(1)+"\u00B0 true";
+    $("dDist").textContent=Math.round(state.distance).toLocaleString()+" km";
+    $("dPos").textContent=Math.abs(lat).toFixed(3)+"\u00B0"+(lat>=0?"N":"S")+"  "+
+                          Math.abs(lng).toFixed(3)+"\u00B0"+(lng>=0?"E":"W")+
+                          (acc ? "   \u00B1"+Math.round(acc)+" m"
+                               : label ? "   "+label : "   entered by hand");
+
+    startHeading();
+    requestAnimationFrame(render);
+  }
+
+  function locate(){
+    $("gate").classList.add("hide");
+    if(!window.isSecureContext){
+      askManual("This page isn't running over HTTPS, so the browser won't share your location.");
+      return;
+    }
+    if(!navigator.geolocation){ askManual("This browser can't share a location."); return; }
+    $("locating").classList.remove("hide");
+    navigator.geolocation.getCurrentPosition(
+      function(p){ useLocation(p.coords.latitude,p.coords.longitude,p.coords.accuracy,null); },
+      function(err){
+        var why = err.code===1 ? "Location permission was blocked."
+                : err.code===2 ? "Your position couldn't be determined."
+                : "Locating timed out.";
+        askManual(why+" Pick your city instead.", err);
+      },
+      { enableHighAccuracy:true, timeout:12000, maximumAge:60000 }
+    );
+  }
+
+  function askManual(msg,err){
+    $("locating").classList.add("hide");
+    $("manualMsg").textContent=msg;
+    $("manual").classList.remove("hide");
+
+    var bits=[];
+    bits.push(window.isSecureContext ? "secure context: yes" : "secure context: NO (needs https)");
+    if(window.top!==window.self) bits.push("running inside a frame");
+    if(location.protocol==="file:") bits.push("opened from a file, not a server");
+    if(err) bits.push("error "+err.code+(err.message?": "+err.message:""));
+    $("diag").textContent=bits.join(" \u00B7 ");
+  }
+
+  /* ---------- city search ---------- */
+  function showResults(list){
+    var ul=$("results"), html="";
+    for(var i=0;i<list.length;i++){
+      html+='<li data-i="'+CITIES.indexOf(list[i])+'"><span class="city">'+list[i].n+
+            '</span><span class="cc">'+list[i].c+'</span></li>';
+    }
+    ul.innerHTML=html;
+  }
+
+  $("cityQ").addEventListener("input",function(){
+    var q=this.value.trim().toLowerCase();
+    if(q.length<2){ $("results").innerHTML=""; return; }
+    var starts=[], contains=[];
+    for(var i=0;i<CITIES.length && starts.length+contains.length<40;i++){
+      if(CITIES[i].s.indexOf(q)===0) starts.push(CITIES[i]);
+      else if(CITIES[i].s.indexOf(q)>-1) contains.push(CITIES[i]);
+    }
+    showResults(starts.concat(contains).slice(0,8));
+  });
+
+  $("results").addEventListener("click",function(e){
+    var li=e.target.closest("li");
+    if(!li) return;
+    var c=CITIES[parseInt(li.getAttribute("data-i"),10)];
+    if(c) useLocation(c.lat,c.lng,null,c.n);
+  });
+
+  $("coordToggle").addEventListener("click",function(){
+    var row=$("coordRow"), open=row.classList.toggle("hide");
+    this.textContent = open ? "Enter coordinates instead" : "Search for a city instead";
+  });
+
+  /* ---------- start ---------- */
+  $("startBtn").addEventListener("click",function(){
+    if(typeof DeviceOrientationEvent!=="undefined" &&
+       typeof DeviceOrientationEvent.requestPermission==="function"){
+      DeviceOrientationEvent.requestPermission()
+        .then(function(){ locate(); })
+        .catch(function(){ locate(); });
+    }else{
+      locate();
+    }
+  });
+
+  $("mGo").addEventListener("click",function(){
+    var la=parseFloat($("mLat").value), ln=parseFloat($("mLng").value);
+    if(isNaN(la)||isNaN(ln)||la<-90||la>90||ln<-180||ln>180){
+      $("manualMsg").textContent="Latitude must be between -90 and 90, longitude between -180 and 180.";
+      return;
+    }
+    useLocation(la,ln,null,null);
+  });
+
+  window.addEventListener("orientationchange",function(){ state.smoothed=null; });
+})();
+</script>
+</body>
+</html>
