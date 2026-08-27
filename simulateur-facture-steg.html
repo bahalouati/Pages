@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur de facture STEG — Basse Tension / Basse Pression</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Kufi+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --encre:#1B3AA0;
+    --encre-fonce:#0E2064;
+    --encre-pale:rgba(27,58,160,.08);
+    --trait:rgba(27,58,160,.30);
+    --papier:#FFFFFF;
+    --fond:#DFE3EE;
+    --rouge:#B5121B;
+    --ambre:#A96A0C;
+    --muted:#5C6890;
+    --ok:#0F6D4E;
+    --r:3px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--fond);
+    background-image:repeating-linear-gradient(0deg,rgba(27,58,160,.035) 0 1px,transparent 1px 26px);
+    color:var(--encre-fonce);
+    font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px;line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .ar{font-family:"Noto Kufi Arabic","Archivo",sans-serif;direction:rtl}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    background:var(--encre);color:#fff;
+    padding:18px 22px 16px;
+    border-bottom:4px double rgba(255,255,255,.55);
+  }
+  .masthead .row{max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;justify-content:space-between}
+  .wordmark{display:flex;align-items:baseline;gap:12px}
+  .wordmark h1{
+    margin:0;font-size:23px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+  }
+  .wordmark .sub{font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.78}
+  .masthead p{margin:6px 0 0;font-size:13px;opacity:.85;max-width:56ch}
+  .stamp{
+    border:1.5px solid rgba(255,255,255,.7);border-radius:2px;
+    padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    transform:rotate(-1.2deg);opacity:.9;text-align:center;line-height:1.5;
+  }
+
+  /* ---------- layout ---------- */
+  .shell{max-width:1240px;margin:0 auto;padding:22px;display:grid;grid-template-columns:388px minmax(0,1fr);gap:22px;align-items:start}
+  @media(max-width:1000px){.shell{grid-template-columns:1fr;padding:14px}}
+
+  /* ---------- controls ---------- */
+  .panel{
+    background:var(--papier);border:1px solid var(--trait);border-radius:var(--r);
+    box-shadow:0 1px 0 rgba(27,58,160,.12);
+  }
+  .controls{position:sticky;top:16px}
+  @media(max-width:1000px){.controls{position:static}}
+  .band{
+    background:var(--encre);color:#fff;padding:7px 12px;
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+  }
+  .band .ar{font-size:12px;letter-spacing:0;opacity:.92}
+  .band.gaz{background:var(--ambre)}
+  .grp{padding:14px 14px 16px;border-bottom:1px dashed var(--trait)}
+  .grp:last-child{border-bottom:0}
+  .grp h3{margin:0 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .f{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+  .f:last-child{margin-bottom:0}
+  .f label{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+  .f label .hint{color:var(--encre);opacity:.6}
+  input[type=number],input[type=text],select{
+    font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+    font-size:15px;padding:8px 9px;border:1px solid var(--trait);border-radius:2px;
+    background:#fbfcff;color:var(--encre-fonce);width:100%;
+  }
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--rouge);outline-offset:1px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--trait);border-radius:2px;overflow:hidden}
+  .seg button{
+    font:inherit;font-size:13px;padding:8px 6px;background:#fbfcff;color:var(--muted);
+    border:0;cursor:pointer;border-right:1px solid var(--trait);
+  }
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed=true]{background:var(--encre);color:#fff;font-weight:600}
+  .check{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;color:var(--encre-fonce)}
+  .check input{width:16px;height:16px;accent-color:var(--encre)}
+  .actions{padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;background:var(--encre-pale)}
+  .btn{
+    font:inherit;font-size:12.5px;letter-spacing:.05em;padding:8px 12px;cursor:pointer;
+    border:1px solid var(--encre);background:#fff;color:var(--encre);border-radius:2px;
+  }
+  .btn:hover{background:var(--encre);color:#fff}
+  .btn.ghost{border-color:var(--trait);color:var(--muted)}
+  .btn.ghost:hover{background:var(--muted);border-color:var(--muted);color:#fff}
+  details.adv summary{
+    cursor:pointer;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    padding:11px 14px;user-select:none;
+  }
+  details.adv[open] summary{border-bottom:1px dashed var(--trait)}
+  details.adv .grp{border-bottom:0}
+
+  /* ---------- seuil gauge (signature) ---------- */
+  .gauge{padding:14px;background:var(--papier);border:1px solid var(--trait);border-radius:var(--r);margin-bottom:22px}
+  .gauge .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .gauge .now{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .gauge .rate{font-size:26px;font-weight:600}
+  .gauge .rate small{font-size:12px;font-weight:400;color:var(--muted);letter-spacing:.06em}
+  .track{position:relative;height:44px;margin:22px 0 8px}
+  .track .bar{position:absolute;inset:14px 0 auto 0;height:14px;display:flex;border:1px solid var(--trait)}
+  .track .seg2{flex:1;border-right:1px solid var(--trait);background:#fbfcff}
+  .track .seg2:last-child{border-right:0}
+  .track .seg2.on{background:var(--encre)}
+  .track .tick{position:absolute;top:32px;font-size:10.5px;color:var(--muted);transform:translateX(-50%)}
+  .track .needle{position:absolute;top:2px;height:38px;width:2px;background:var(--rouge)}
+  .track .needle::after{
+    content:attr(data-v);position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+    background:var(--rouge);color:#fff;font-size:10px;padding:1px 5px;white-space:nowrap;border-radius:2px;
+    font-family:"IBM Plex Mono",monospace;
+  }
+  .warn{font-size:13px;padding:9px 11px;border-left:3px solid var(--rouge);background:rgba(181,18,27,.06);color:#7d1015}
+  .warn.calm{border-left-color:var(--ok);background:rgba(15,109,78,.07);color:var(--ok)}
+
+  /* ---------- facture sheet ---------- */
+  .sheet{
+    background:var(--papier);border:1px solid var(--trait);border-radius:var(--r);
+    box-shadow:0 2px 0 rgba(27,58,160,.10), 0 14px 34px -26px rgba(14,32,100,.7);
+    color:var(--encre);overflow:hidden;
+  }
+  .sheet-head{padding:16px 18px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;border-bottom:1px solid var(--trait)}
+  .sheet-head .t{font-size:27px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;line-height:1}
+  .sheet-head .t span{display:block;font-size:10.5px;letter-spacing:.14em;font-weight:400;color:var(--muted);margin-top:6px}
+  .sheet-head .ar{font-size:21px;font-weight:600}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--trait);border-bottom:1px solid var(--trait)}
+  .meta div{background:var(--papier);padding:8px 12px}
+  .meta dt{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:0}
+  .meta dd{margin:2px 0 0;font-family:"IBM Plex Mono",monospace;font-size:14px}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:7px 12px;text-align:right;font-size:13.5px}
+  th{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;border-bottom:1px solid var(--trait);vertical-align:bottom;line-height:1.25}
+  td.lib{text-align:left}
+  tbody tr{border-bottom:1px dotted var(--trait)}
+  tbody tr.void td{color:var(--muted);opacity:.6}
+  td .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+  .mark{font-size:10px;color:var(--muted);margin-right:5px;font-family:"IBM Plex Mono",monospace}
+  tr.sum{background:var(--encre-pale);font-weight:600;border-bottom:1px solid var(--trait)}
+  tr.sum td{font-size:14px}
+  .grand{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    margin:12px;padding:10px 14px;border:1.5px solid var(--rouge);
+  }
+  .grand .lab{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--rouge);font-weight:600}
+  .grand .val{font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600}
+  .payer{
+    margin:0 12px 12px;padding:14px;border:2px solid var(--rouge);background:rgba(181,18,27,.05);
+    display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .payer .lab{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--rouge);font-weight:700}
+  .payer .lab span{display:block;font-size:10px;letter-spacing:.08em;color:var(--muted);font-weight:400;margin-top:3px;text-transform:none}
+  .payer .val{font-family:"IBM Plex Mono",monospace;font-size:34px;font-weight:600;color:var(--rouge);line-height:1}
+  .payer .val small{font-size:14px;letter-spacing:.06em}
+  .payer.credit{border-color:var(--ok);background:rgba(15,109,78,.06)}
+  .payer.credit .lab,.payer.credit .val{color:var(--ok)}
+  .foot{padding:11px 14px;border-top:1px dashed var(--trait);font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .barcode{height:26px;width:170px;background:repeating-linear-gradient(90deg,var(--encre) 0 1px,transparent 1px 3px,var(--encre) 3px 5px,transparent 5px 6px,var(--encre) 6px 7px,transparent 7px 10px);opacity:.7}
+
+  .notes{margin:22px 0 40px;font-size:12.5px;color:var(--muted);line-height:1.6}
+  .notes h4{margin:0 0 6px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--encre)}
+  .notes a{color:var(--encre)}
+  .notes ul{margin:0;padding-left:18px}
+
+  @media print{
+    body{background:#fff}
+    .masthead,.controls,.gauge,.notes,.no-print{display:none!important}
+    .shell{display:block;padding:0;max-width:none}
+    .sheet{border:0;box-shadow:none}
+  }
+  @media(prefers-reduced-motion:no-preference){
+    .sheet,.gauge{transition:none}
+    .payer .val{transition:color .2s ease}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="row">
+    <div>
+      <div class="wordmark">
+        <h1>Facture STEG</h1>
+        <div class="sub">Simulateur</div>
+      </div>
+      <p>Reconstitue une facture Basse Tension / Basse Pression à partir de vos index de compteur : tranche appliquée, redevances, taxes, TVA et montant à payer.</p>
+    </div>
+    <div class="stamp">Barème officiel<br>en vigueur au 01/05/2022</div>
+  </div>
+</header>
+
+<main class="shell">
+
+  <!-- ============ CONTROLS ============ -->
+  <form class="panel controls" id="form" onsubmit="return false">
+    <div class="band">Paramètres du contrat <span class="ar">معطيات العقد</span></div>
+
+    <div class="grp">
+      <div class="f">
+        <label for="usage">Usage</label>
+        <select id="usage">
+          <option value="res">Résidentiel (domestique)</option>
+          <option value="nonres">Non résidentiel</option>
+        </select>
+      </div>
+      <div class="two">
+        <div class="f">
+          <label for="mois">Nombre de mois</label>
+          <input type="number" id="mois" value="4" min="1" max="12" step="1">
+        </div>
+        <div class="f">
+          <label for="kva">Puissance <span class="hint">kVA</span></label>
+          <input type="number" id="kva" value="4" min="1" max="36" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="band">Électricité <span class="ar">كهرباء</span></div>
+    <div class="grp">
+      <div class="seg" role="group" aria-label="Mode de saisie électricité">
+        <button type="button" id="modeIdx" aria-pressed="true">Index compteur</button>
+        <button type="button" id="modeKwh" aria-pressed="false">kWh directs</button>
+      </div>
+      <div id="boxIdx" style="margin-top:11px">
+        <div class="two">
+          <div class="f">
+            <label for="idxA">Index ancien</label>
+            <input type="number" id="idxA" value="0" min="0" step="1">
+          </div>
+          <div class="f">
+            <label for="idxN">Index nouveau</label>
+            <input type="number" id="idxN" value="142" min="0" step="1">
+          </div>
+        </div>
+      </div>
+      <div id="boxKwh" hidden style="margin-top:11px">
+        <div class="f">
+          <label for="kwh">Consommation de la période <span class="hint">kWh</span></label>
+          <input type="number" id="kwh" value="142" min="0" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="band gaz">Gaz naturel <span class="ar">غاز</span></div>
+    <div class="grp">
+      <label class="check" for="gazOn"><input type="checkbox" id="gazOn" checked> Compteur gaz raccordé</label>
+      <div id="gazFields" style="margin-top:11px">
+        <div class="two">
+          <div class="f">
+            <label for="gIdxA">Index ancien <span class="hint">th</span></label>
+            <input type="number" id="gIdxA" value="0" min="0" step="1">
+          </div>
+          <div class="f">
+            <label for="gIdxN">Index nouveau <span class="hint">th</span></label>
+            <input type="number" id="gIdxN" value="0" min="0" step="1">
+          </div>
+        </div>
+        <div class="f">
+          <label for="debit">Débit souscrit <span class="hint">th/h</span></label>
+          <input type="number" id="debit" value="5" min="0" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="band">Solde <span class="ar">الرصيد</span></div>
+    <div class="grp">
+      <div class="two">
+        <div class="f">
+          <label for="arr">Arriérés <span class="hint">DT</span></label>
+          <input type="number" id="arr" value="0" min="0" step="0.001">
+        </div>
+        <div class="f">
+          <label for="pay">Paiements précédents <span class="hint">DT</span></label>
+          <input type="number" id="pay" value="0" min="0" step="0.001">
+        </div>
+      </div>
+    </div>
+
+    <details class="adv">
+      <summary>Barème et taxes — modifier</summary>
+      <div class="grp">
+        <div class="two">
+          <div class="f">
+            <label for="redElec">Redevance puissance <span class="hint">mill/kVA/mois</span></label>
+            <input type="number" id="redElec" value="700" min="0" step="1">
+          </div>
+          <div class="f">
+            <label for="redGaz">Redevance débit <span class="hint">mill/th-h/mois</span></label>
+            <input type="number" id="redGaz" value="150" min="0" step="0.1">
+          </div>
+        </div>
+        <div class="two">
+          <div class="f">
+            <label for="cl">Surtaxe municipale <span class="hint">mill/kWh</span></label>
+            <input type="number" id="cl" value="5" min="0" step="0.1">
+          </div>
+          <div class="f">
+            <label for="fte">FTE électricité <span class="hint">mill/kWh</span></label>
+            <input type="number" id="fte" value="5" min="0" step="0.1">
+          </div>
+        </div>
+        <div class="f">
+          <label for="rtt">Contribution RTT <span class="hint">DT/mois</span></label>
+          <input type="number" id="rtt" value="0.355" min="0" step="0.001">
+        </div>
+      </div>
+    </details>
+
+    <div class="actions no-print">
+      <button type="button" class="btn" id="exemple">Charger la facture d'exemple</button>
+      <button type="button" class="btn ghost" id="imprimer">Imprimer</button>
+    </div>
+  </form>
+
+  <!-- ============ OUTPUT ============ -->
+  <div>
+    <!-- signature: tranche gauge -->
+    <section class="gauge" aria-live="polite">
+      <div class="top">
+        <div>
+          <div class="now">Tranche appliquée — <span id="trancheLib">—</span></div>
+          <div class="rate"><span id="rateVal">—</span> <small>millimes / kWh · sur la totalité des kWh</small></div>
+        </div>
+        <div style="text-align:right">
+          <div class="now">Moyenne mensuelle</div>
+          <div class="rate"><span id="avgVal">—</span> <small>kWh/mois</small></div>
+        </div>
+      </div>
+      <div class="track" id="track" aria-hidden="true">
+        <div class="bar" id="bar"></div>
+        <div id="ticks"></div>
+        <div class="needle" id="needle" data-v=""></div>
+      </div>
+      <div class="warn" id="seuilMsg">—</div>
+    </section>
+
+    <!-- the facture -->
+    <section class="sheet" id="sheet">
+      <div class="sheet-head">
+        <div class="t">Facture<span>Basse Tension / Basse Pression — simulation</span></div>
+        <div class="ar">فاتورة</div>
+      </div>
+
+      <dl class="meta" id="meta"></dl>
+
+      <div class="band">Consommation &amp; services <span class="ar">الإستهلاك و الخدمات</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th class="lib" style="text-align:left">Libellés</th>
+            <th>Quantité</th>
+            <th>Moyenne<br>mensuelle</th>
+            <th>Prix<br>unitaire</th>
+            <th>TVA<br>(%)</th>
+            <th>Montant<br>hors taxes</th>
+          </tr>
+        </thead>
+        <tbody id="lignes"></tbody>
+      </table>
+
+      <div class="band">Taxes <span class="ar">الأداءات</span></div>
+      <table>
+        <tbody id="taxes"></tbody>
+      </table>
+
+      <div class="grand">
+        <div class="lab"><span class="mark">(16)</span>Montant total</div>
+        <div class="val"><span id="mTotal">0,000</span> DT</div>
+      </div>
+
+      <table>
+        <tbody id="solde"></tbody>
+      </table>
+
+      <div class="payer" id="payer">
+        <div class="lab">Montant à payer <span>المبلغ المطلوب <span class="mark">(19)</span></span></div>
+        <div class="val"><span id="mPayer">0,000</span> <small>DT</small></div>
+      </div>
+
+      <div class="foot">
+        <div class="barcode" aria-hidden="true"></div>
+        <div>Simulation — les montants réels peuvent différer selon les régularisations d'index et les services facturés par la STEG.</div>
+      </div>
+    </section>
+
+    <div class="notes">
+      <h4>Comment le calcul est fait</h4>
+      <ul>
+        <li>Le prix du kWh dépend de la <strong>moyenne mensuelle</strong> de la période, et s'applique à <strong>la totalité</strong> des kWh — franchir un seuil renchérit toute la consommation, pas seulement les kWh au-dessus.</li>
+        <li>Tranche économique : réservée aux compteurs de 1 ou 2 kVA consommant au plus 100 kWh/mois (62 ou 96 mill/kWh en résidentiel, FTE non due).</li>
+        <li>TVA : 7 % sur l'énergie résidentielle jusqu'à 300 kWh/mois, 13 % au-delà, 19 % sur les redevances et sur l'usage non résidentiel.</li>
+        <li>Surtaxe municipale et FTE : 5 mill/kWh chacune. FTE gaz : 11,875 mill/m³ au-delà de 300 th/mois.</li>
+        <li>Barème publié par la STEG, en vigueur depuis le 01/05/2022 : <a href="https://www.steg.com.tn/fr/page/les-tarifs-d%C3%A9lectricit%C3%A9" target="_blank" rel="noopener">tarifs électricité</a> · <a href="https://www.steg.com.tn/fr/page/les-tarifs-du-gaz" target="_blank" rel="noopener">tarifs gaz</a>.</li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- barème officiel STEG (millimes) ---------- */
+  var ELEC = {
+    res:    { eco50:62, eco100:96, brackets:[[200,176,"101–200 kWh/mois"],[300,218,"201–300 kWh/mois"],[500,341,"301–500 kWh/mois"],[Infinity,414,"plus de 500 kWh/mois"]] },
+    nonres: { eco:104,               brackets:[[200,195,"jusqu'à 200 kWh/mois"],[300,240,"201–300 kWh/mois"],[500,333,"301–500 kWh/mois"],[Infinity,391,"plus de 500 kWh/mois"]] }
+  };
+  var GAZ = {
+    res:    [[300,231,"jusqu'à 300 th/mois"],[600,368,"301–600 th/mois"],[1500,556,"601–1500 th/mois"],[Infinity,824,"plus de 1500 th/mois"]],
+    nonres: [[300,243,"jusqu'à 300 th/mois"],[600,380,"301–600 th/mois"],[1500,536,"601–1500 th/mois"],[Infinity,700,"plus de 1500 th/mois"]]
+  };
+  var FTE_GAZ_M3 = 11.875; // millimes / m3, 1 m3 = 10 th
+
+  /* ---------- helpers ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var n = function(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
+  var r3 = function(v){ return Math.round(v*1000)/1000; };
+  function dt(v){
+    var s = Math.abs(v).toFixed(3).replace(".", ",");
+    return (v<0?"-":"") + s;
+  }
+  function int(v){ return Math.round(v).toString(); }
+
+  var modeIndex = true;
+
+  /* ---------- tariff selection ---------- */
+  function elecTariff(usage, kva, avg){
+    var eco = kva <= 2 && avg <= 100;
+    if (usage === "res"){
+      if (eco) return { rate: avg<=50 ? ELEC.res.eco50 : ELEC.res.eco100,
+                        lib: "économique · " + (avg<=50 ? "1–50" : "51–100") + " kWh/mois", eco:true };
+      var b = ELEC.res.brackets;
+      for (var i=0;i<b.length;i++) if (avg <= b[i][0]) return { rate:b[i][1], lib:"normale · "+b[i][2], eco:false };
+    } else {
+      if (eco) return { rate: ELEC.nonres.eco, lib:"économique · jusqu'à 100 kWh/mois", eco:true };
+      var c = ELEC.nonres.brackets;
+      for (var j=0;j<c.length;j++) if (avg <= c[j][0]) return { rate:c[j][1], lib:"normale · "+c[j][2], eco:false };
+    }
+    return { rate:0, lib:"—", eco:false };
+  }
+  function gazTariff(usage, avgTh){
+    var t = GAZ[usage];
+    for (var i=0;i<t.length;i++) if (avgTh <= t[i][0]) return { rate:t[i][1], lib:t[i][2] };
+    return { rate:0, lib:"—" };
+  }
+
+  /* ---------- computation ---------- */
+  function compute(){
+    var usage = $("usage").value;
+    var mois  = Math.max(1, Math.round(n("mois")));
+    var kva   = Math.max(0, n("kva"));
+
+    var kwh = modeIndex ? Math.max(0, n("idxN") - n("idxA")) : Math.max(0, n("kwh"));
+    var avg = kwh / mois;
+
+    var t = elecTariff(usage, kva, avg);
+    var energieHT   = r3(kwh * t.rate / 1000);
+    var redevanceHT = r3(kva * n("redElec") / 1000 * mois);
+
+    var gazOn = $("gazOn").checked;
+    var th    = gazOn ? Math.max(0, n("gIdxN") - n("gIdxA")) : 0;
+    var debit = gazOn ? Math.max(0, n("debit")) : 0;
+    var avgTh = th / mois;
+    var g     = gazTariff(usage, avgTh);
+    var gazEnergieHT   = gazOn ? r3(th * g.rate / 1000) : 0;
+    var gazRedevanceHT = gazOn ? r3(debit * n("redGaz") / 1000 * mois) : 0;
+
+    // TVA
+    var tvaEnergie = usage === "res" ? (avg <= 300 ? 0.07 : 0.13) : 0.19;
+    var tva = r3(energieHT*tvaEnergie + redevanceHT*0.19 + gazEnergieHT*0.19 + gazRedevanceHT*0.19);
+
+    // taxes
+    var cl   = r3(kwh * n("cl") / 1000);
+    var ftee = t.eco ? 0 : r3(kwh * n("fte") / 1000);
+    var fteg = (gazOn && avgTh > 300) ? r3((th/10) * FTE_GAZ_M3 / 1000) : 0;
+    var rtt  = r3(n("rtt") * mois);
+
+    var totalElec = r3(energieHT + redevanceHT);
+    var totalGaz  = r3(gazEnergieHT + gazRedevanceHT);
+    var services  = 0;
+    var totalConso = r3(totalElec + totalGaz + services);
+    var totalTaxes = r3(cl + rtt + ftee + fteg + tva);
+    var montantTotal = r3(totalConso + totalTaxes);
+    var solde = r3(montantTotal + Math.max(0,n("arr")) - Math.max(0,n("pay")));
+
+    return {
+      usage:usage, mois:mois, kva:kva, kwh:kwh, avg:avg, t:t,
+      energieHT:energieHT, redevanceHT:redevanceHT, tvaEnergie:tvaEnergie,
+      gazOn:gazOn, th:th, debit:debit, avgTh:avgTh, g:g,
+      gazEnergieHT:gazEnergieHT, gazRedevanceHT:gazRedevanceHT,
+      cl:cl, ftee:ftee, fteg:fteg, rtt:rtt, tva:tva,
+      totalElec:totalElec, totalGaz:totalGaz, services:services,
+      totalConso:totalConso, totalTaxes:totalTaxes, montantTotal:montantTotal,
+      solde:solde
+    };
+  }
+
+  /* ---------- rendering ---------- */
+  function row(mark, lib, cells, cls){
+    var html = '<tr class="'+(cls||"")+'"><td class="lib"><span class="mark">'+mark+'</span>'+lib+'</td>';
+    for (var i=0;i<cells.length;i++) html += '<td><span class="num">'+cells[i]+'</span></td>';
+    return html + '</tr>';
+  }
+  function totalRow(mark, lib, ar, value){
+    return '<tr class="sum"><td class="lib" colspan="5"><span class="mark">'+mark+'</span>'+lib+
+           ' <span class="ar" style="font-size:12px;color:var(--muted)">'+ar+'</span></td>'+
+           '<td><span class="num">'+dt(value)+'</span></td></tr>';
+  }
+
+  function render(){
+    var d = compute();
+
+    /* meta strip */
+    $("meta").innerHTML =
+      '<div><dt>Période</dt><dd>'+d.mois+' mois</dd></div>'+
+      '<div><dt>Usage</dt><dd>'+(d.usage==="res"?"Domestique":"Non résid.")+'</dd></div>'+
+      '<div><dt>Puissance</dt><dd>'+int(d.kva)+' kVA</dd></div>'+
+      '<div><dt>Consommation</dt><dd>'+int(d.kwh)+' kWh</dd></div>'+
+      (d.gazOn ? '<div><dt>Gaz</dt><dd>'+int(d.th)+' th</dd></div>' : '');
+
+    /* consumption lines */
+    var L = "";
+    L += row('(1)', 'Éclairage <span class="ar" style="font-size:12px;color:var(--muted)">إضاءة</span>',
+             [int(d.kwh), int(Math.floor(d.avg)), int(d.t.rate), Math.round(d.tvaEnergie*100), dt(d.energieHT)]);
+    L += row('(5)', 'Redevances fixes — '+int(d.kva)+' kVA',
+             ['—','—', int(n("redElec")), 19, dt(d.redevanceHT)]);
+    L += totalRow('(11)', 'Total électricité', 'مجموع الكهرباء', d.totalElec);
+
+    if (d.gazOn){
+      L += row('(1)', 'Gaz naturel <span class="ar" style="font-size:12px;color:var(--muted)">غاز</span>',
+               [int(d.th), int(Math.floor(d.avgTh)), int(d.g.rate), 19, dt(d.gazEnergieHT)], d.th ? "" : "void");
+      L += row('(5)', 'Redevance de débit — '+int(d.debit)+' th/h',
+               ['—','—', dt(n("redGaz")).replace(",000",""), 19, dt(d.gazRedevanceHT)]);
+      L += totalRow('(12)', 'Total gaz', 'مجموع الغاز', d.totalGaz);
+    }
+    L += totalRow('(13)', 'Total services', 'مجموع الخدمات', d.services);
+    L += totalRow('(14)', 'Total consommation et services', 'مجموع الإستهلاك والخدمات', d.totalConso);
+    $("lignes").innerHTML = L;
+
+    /* taxes */
+    var T = "";
+    function taxRow(mark, lib, ar, qte, pu, val){
+      return '<tr><td class="lib"><span class="mark">'+mark+'</span>'+lib+
+             ' <span class="ar" style="font-size:12px;color:var(--muted)">'+ar+'</span></td>'+
+             '<td><span class="num">'+qte+'</span></td><td><span class="num">'+pu+'</span></td>'+
+             '<td colspan="3"><span class="num">'+dt(val)+'</span></td></tr>';
+    }
+    T += taxRow('(6)','Contribution CL','مساهمة الجماعات المحلية', int(d.kwh), int(n("cl")), d.cl);
+    T += taxRow('(7)','Contribution RTT','معلوم الإذاعة والتلفزة', '—', '—', d.rtt);
+    T += taxRow('(8)','FTE (Élect.)','صندوق الإنتقال الطاقي (كهرباء)', d.ftee ? int(d.kwh) : '—', d.ftee ? int(n("fte")) : '—', d.ftee);
+    if (d.gazOn) T += taxRow('(9)','FTE (Gaz)','صندوق الإنتقال الطاقي (غاز)', d.fteg ? int(d.th/10)+' m³' : '—', d.fteg ? '11,875' : '—', d.fteg);
+    T += taxRow('(10)','TVA','الأداء على القيمة المضافة', '—', Math.round(d.tvaEnergie*100)+' / 19 %', d.tva);
+    T += '<tr class="sum"><td class="lib" colspan="3"><span class="mark">(15)</span>Total taxes <span class="ar" style="font-size:12px;color:var(--muted)">مجموع الأداءات</span></td><td colspan="3"><span class="num">'+dt(d.totalTaxes)+'</span></td></tr>';
+    $("taxes").innerHTML = T;
+
+    $("mTotal").textContent = dt(d.montantTotal);
+
+    /* balance */
+    $("solde").innerHTML =
+      '<tr><td class="lib"><span class="mark">(17)</span>Arriérés <span class="ar" style="font-size:12px;color:var(--muted)">دين غير مسدد</span></td><td><span class="num">+ '+dt(Math.max(0,n("arr")))+'</span></td></tr>'+
+      '<tr><td class="lib"><span class="mark">(18)</span>Paiements précédents <span class="ar" style="font-size:12px;color:var(--muted)">دفوعات سابقة</span></td><td><span class="num">− '+dt(Math.max(0,n("pay")))+'</span></td></tr>';
+
+    /* amount due */
+    var payer = $("payer");
+    if (d.solde < 0){
+      payer.className = "payer credit";
+      payer.querySelector(".lab").innerHTML = 'Solde créditeur <span>rien à payer — avoir reporté</span>';
+      $("mPayer").textContent = dt(Math.abs(d.solde));
+    } else {
+      payer.className = "payer";
+      payer.querySelector(".lab").innerHTML = 'Montant à payer <span>المبلغ المطلوب</span>';
+      $("mPayer").textContent = dt(d.solde);
+    }
+
+    renderGauge(d);
+  }
+
+  /* ---------- tranche gauge ---------- */
+  function renderGauge(d){
+    $("trancheLib").textContent = d.t.lib;
+    $("rateVal").textContent = int(d.t.rate);
+    $("avgVal").textContent = d.avg.toFixed(1).replace(".", ",");
+
+    var stops = [0,50,100,200,300,500,700];
+    var bar = "", ticks = "";
+    for (var i=0;i<stops.length-1;i++){
+      var mid = (stops[i]+stops[i+1])/2;
+      var on = d.avg > stops[i] ? "on" : "";
+      bar += '<div class="seg2 '+on+'"></div>';
+    }
+    for (var k=1;k<stops.length-1;k++){
+      ticks += '<div class="tick" style="left:'+((k/(stops.length-1))*100)+'%">'+stops[k]+'</div>';
+    }
+    $("bar").innerHTML = bar;
+    $("ticks").innerHTML = ticks;
+
+    var pos = Math.min(1, d.avg/700);
+    // position inside the equal-width segments, proportional within the containing segment
+    var seg = 0;
+    for (var s=0;s<stops.length-1;s++){ if (d.avg > stops[s]) seg = s; }
+    var within = (d.avg - stops[seg]) / (stops[seg+1]-stops[seg]);
+    pos = Math.min(1, (seg + Math.min(1, within)) / (stops.length-1));
+    var needle = $("needle");
+    needle.style.left = (pos*100)+"%";
+    needle.setAttribute("data-v", d.avg.toFixed(0)+" kWh/m");
+
+    /* next threshold message */
+    var msg = $("seuilMsg");
+    var thresholds = d.usage === "res" && !(d.kva<=2)
+        ? [200,300,500]
+        : (d.kva<=2 ? [50,100,200,300,500] : [200,300,500]);
+    var next = null;
+    for (var q=0;q<thresholds.length;q++){ if (d.avg <= thresholds[q]) { next = thresholds[q]; break; } }
+
+    if (d.kwh === 0){
+      msg.className = "warn calm";
+      msg.textContent = "Saisissez vos index pour voir la tranche appliquée.";
+      return;
+    }
+    if (next === null){
+      msg.className = "warn calm";
+      msg.textContent = "Vous êtes dans la tranche la plus haute : au-delà de 500 kWh/mois, tous les kWh sont facturés au même prix.";
+      return;
+    }
+    var marge = next - d.avg;
+    var futur = elecTariff(d.usage, d.kva, next + 1);
+    var surcout = r3(d.kwh * (futur.rate - d.t.rate)/1000);
+    var tvaFutur = d.usage==="res" ? (next+1 <= 300 ? 7 : 13) : 19;
+    var noteTva = (tvaFutur !== Math.round(d.tvaEnergie*100)) ? " et la TVA sur l'énergie passerait de "+Math.round(d.tvaEnergie*100)+" % à "+tvaFutur+" %" : "";
+
+    if (marge <= 15){
+      msg.className = "warn";
+      msg.innerHTML = "À <strong>"+marge.toFixed(0)+" kWh/mois</strong> du seuil de "+next+" kWh/mois. Le franchir ferait passer <strong>tous</strong> vos kWh de "+d.t.rate+" à "+futur.rate+" mill"+noteTva+" — soit environ <strong>+"+dt(surcout)+" DT</strong> sur une facture comme celle-ci.";
+    } else {
+      msg.className = "warn calm";
+      msg.innerHTML = "Marge de <strong>"+marge.toFixed(0)+" kWh/mois</strong> avant le seuil de "+next+" kWh/mois, où le prix passerait à "+futur.rate+" mill/kWh sur la totalité de la consommation"+noteTva+".";
+    }
+  }
+
+  /* ---------- wiring ---------- */
+  var form = $("form");
+  form.addEventListener("input", render);
+  form.addEventListener("change", render);
+
+  $("modeIdx").addEventListener("click", function(){
+    modeIndex = true;
+    $("modeIdx").setAttribute("aria-pressed","true");
+    $("modeKwh").setAttribute("aria-pressed","false");
+    $("boxIdx").hidden = false; $("boxKwh").hidden = true;
+    render();
+  });
+  $("modeKwh").addEventListener("click", function(){
+    modeIndex = false;
+    $("modeKwh").setAttribute("aria-pressed","true");
+    $("modeIdx").setAttribute("aria-pressed","false");
+    $("boxKwh").hidden = false; $("boxIdx").hidden = true;
+    $("kwh").value = Math.max(0, n("idxN") - n("idxA"));
+    render();
+  });
+  $("gazOn").addEventListener("change", function(){
+    $("gazFields").hidden = !$("gazOn").checked;
+    render();
+  });
+  $("imprimer").addEventListener("click", function(){ window.print(); });
+
+  $("exemple").addEventListener("click", function(){
+    var vals = { usage:"res", mois:4, kva:4, idxA:0, idxN:142, gIdxA:0, gIdxN:0, debit:5,
+                 arr:0, pay:154.868, redElec:700, redGaz:150, cl:5, fte:5, rtt:0.355 };
+    $("usage").value = vals.usage;
+    $("gazOn").checked = true; $("gazFields").hidden = false;
+    Object.keys(vals).forEach(function(k){ if (k!=="usage" && $(k)) $(k).value = vals[k]; });
+    if (!modeIndex) $("modeIdx").click(); else render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
