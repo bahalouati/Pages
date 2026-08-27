@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Kahraba — calcul facture STEG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12181a;
+    --surface:#1b2225;
+    --surface-2:#212a2d;
+    --border:#2c363a;
+    --text:#ece7dd;
+    --text-dim:#8b959a;
+    --accent:#e8a33d;
+    --accent-dim:#8a6a35;
+    --teal:#2e9c8f;
+    --danger:#e4572e;
+    --display: 'Space Grotesk', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--display);
+    -webkit-tap-highlight-color:transparent;
+    min-height:100vh;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding-bottom:84px;
+  }
+  header.top{
+    padding:22px 20px 8px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+  }
+  header.top .brand{
+    display:flex;
+    align-items:center;
+    gap:9px;
+  }
+  header.top .dot{
+    width:9px;height:9px;border-radius:2px;
+    background:var(--accent);
+    box-shadow:0 0 8px var(--accent);
+  }
+  header.top h1{
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:.2px;
+    margin:0;
+  }
+  header.top .sub{
+    font-size:11px;
+    color:var(--text-dim);
+    font-family:var(--mono);
+  }
+
+  main{flex:1;padding:6px 16px 20px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    color:var(--text-dim);
+    margin:0 0 12px;
+    font-weight:600;
+  }
+
+  /* segmented control */
+  .segmented{
+    display:flex;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:3px;
+    gap:3px;
+    margin-bottom:14px;
+  }
+  .segmented button{
+    flex:1;
+    border:0;
+    background:transparent;
+    color:var(--text-dim);
+    font-family:var(--display);
+    font-size:13px;
+    font-weight:600;
+    padding:9px 6px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .segmented button.active{
+    background:var(--accent);
+    color:#1a1206;
+  }
+
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    font-family:var(--mono);
+  }
+  .field .row{display:flex; gap:8px;}
+  input[type=number], input[type=text]{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:16px;
+    padding:12px 12px;
+    border-radius:10px;
+    outline:none;
+  }
+  input:focus{border-color:var(--accent);}
+  .kwh-input{
+    font-size:34px;
+    font-weight:600;
+    text-align:right;
+    padding:14px 14px;
+    letter-spacing:.5px;
+  }
+  .kwh-unit{
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:right;
+    margin-top:4px;
+    font-family:var(--mono);
+  }
+
+  button.btn{
+    border:0;
+    border-radius:10px;
+    padding:12px 14px;
+    font-family:var(--display);
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .btn-accent{background:var(--accent); color:#1a1206;}
+  .btn-outline{background:transparent; border:1px solid var(--border); color:var(--text);}
+  .btn-outline:active{border-color:var(--accent);}
+  .btn-full{width:100%;}
+  .btn-row{display:flex; gap:8px;}
+
+  .scan-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%;
+    background:var(--surface-2);
+    border:1px dashed var(--accent-dim);
+    color:var(--accent);
+    padding:13px;
+    border-radius:10px;
+    font-family:var(--display);
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .scan-btn svg{width:18px;height:18px;}
+  .scan-hint{
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:6px;
+    line-height:1.5;
+  }
+  .ocr-status{
+    font-size:12px;
+    color:var(--accent);
+    font-family:var(--mono);
+    margin-top:8px;
+    display:none;
+  }
+  .ocr-status.show{display:flex; align-items:center; gap:8px;}
+  .spinner{
+    width:12px;height:12px;
+    border:2px solid var(--accent-dim);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* result */
+  .total-block{
+    text-align:center;
+    padding:6px 0 14px;
+  }
+  .total-block .label{
+    font-size:11px;
+    color:var(--text-dim);
+    font-family:var(--mono);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .total-block .amount{
+    font-family:var(--mono);
+    font-size:44px;
+    font-weight:600;
+    color:var(--accent);
+    line-height:1.1;
+  }
+  .total-block .amount small{font-size:18px; color:var(--text-dim); font-weight:400;}
+
+  .breakdown{border-top:1px solid var(--border); padding-top:10px;}
+  .breakdown .line{
+    display:flex; justify-content:space-between;
+    font-size:13px;
+    padding:6px 0;
+    color:var(--text-dim);
+    font-family:var(--mono);
+  }
+  .breakdown .line span:last-child{color:var(--text);}
+  .breakdown .line.total{
+    border-top:1px solid var(--border);
+    margin-top:4px; padding-top:10px;
+    color:var(--text);
+    font-weight:600;
+  }
+  .breakdown .line.total span:last-child{color:var(--accent); font-size:15px;}
+
+  /* gauge */
+  .gauge-wrap{margin-top:2px;}
+  .gauge{
+    display:flex;
+    gap:3px;
+    height:34px;
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .gauge .seg{
+    flex:1;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--mono);
+    font-size:10px;
+    color:rgba(0,0,0,.55);
+    font-weight:600;
+    opacity:.35;
+  }
+  .gauge .seg.active{
+    opacity:1;
+    box-shadow:0 0 0 2px var(--bg) inset, 0 0 14px rgba(0,0,0,.4);
+  }
+  .gauge-labels{
+    display:flex; gap:3px; margin-top:6px;
+  }
+  .gauge-labels span{
+    flex:1; text-align:center;
+    font-size:9px; color:var(--text-dim); font-family:var(--mono);
+  }
+  .threshold-warn{
+    margin-top:12px;
+    background:rgba(228,87,46,.1);
+    border:1px solid rgba(228,87,46,.35);
+    border-radius:10px;
+    padding:11px 12px;
+    font-size:12px;
+    line-height:1.5;
+    color:#f0a98d;
+    display:none;
+  }
+  .threshold-warn.show{display:block;}
+  .threshold-warn b{color:var(--danger);}
+
+  .save-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:10px;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+
+  /* settings */
+  .tranche-row{
+    display:grid;
+    grid-template-columns:1fr 90px;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .tranche-row .range{font-size:12px; color:var(--text-dim); font-family:var(--mono);}
+  .tranche-row input{padding:8px 10px; font-size:14px;}
+  .setting-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    gap:12px;
+  }
+  .setting-row:last-child{border-bottom:0;}
+  .setting-row .lbl{font-size:13px;}
+  .setting-row .lbl .hint{display:block; font-size:11px; color:var(--text-dim); margin-top:2px;}
+  .setting-row input[type=number]{width:90px; text-align:right;}
+  .toggle{
+    width:44px; height:26px; border-radius:14px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    position:relative; cursor:pointer; flex-shrink:0;
+  }
+  .toggle .knob{
+    position:absolute; top:2px; left:2px;
+    width:20px; height:20px; border-radius:50%;
+    background:var(--text-dim);
+    transition:.15s;
+  }
+  .toggle.on{background:rgba(232,163,61,.25); border-color:var(--accent-dim);}
+  .toggle.on .knob{left:20px; background:var(--accent);}
+
+  select{
+    background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:8px 10px; font-family:var(--mono); font-size:13px;
+  }
+
+  .note{
+    font-size:11px; color:var(--text-dim); line-height:1.6; margin-top:6px;
+  }
+  .source-line{
+    font-size:10px; color:var(--text-dim); text-align:center; margin-top:18px; line-height:1.6;
+  }
+
+  /* history */
+  .hist-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--border);
+  }
+  .hist-item:last-child{border-bottom:0;}
+  .hist-item .d{font-size:12px; color:var(--text-dim); font-family:var(--mono);}
+  .hist-item .k{font-size:13px; margin-top:2px;}
+  .hist-item .t{font-family:var(--mono); color:var(--accent); font-weight:600;}
+  .empty{color:var(--text-dim); font-size:13px; text-align:center; padding:20px 0;}
+
+  /* bottom nav */
+  nav.tabs{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    display:flex;
+    max-width:480px; margin:0 auto;
+  }
+  nav.tabs button{
+    flex:1; background:transparent; border:0; color:var(--text-dim);
+    padding:12px 0 10px; font-family:var(--display); font-size:11px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer;
+  }
+  nav.tabs button svg{width:20px; height:20px;}
+  nav.tabs button.active{color:var(--accent);}
+
+  #cameraInput{display:none;}
+  canvas{display:none;}
+
+  .toast{
+    position:fixed; left:50%; bottom:96px; transform:translate(-50%,10px);
+    background:var(--surface-2); border:1px solid var(--border);
+    color:var(--text); padding:10px 16px; border-radius:10px;
+    font-size:12px; opacity:0; transition:.2s; pointer-events:none;
+    max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <div class="dot"></div>
+      <h1>Kahraba</h1>
+    </div>
+    <div class="sub">STEG · basse tension</div>
+  </header>
+
+  <main>
+
+    <!-- ============ CALCULER ============ -->
+    <section class="panel active" id="panel-calc">
+
+      <div class="card">
+        <div class="segmented" id="modeSwitch">
+          <button data-mode="direct" class="active">Consommation</button>
+          <button data-mode="releves">Relevés compteur</button>
+        </div>
+
+        <!-- direct mode -->
+        <div id="mode-direct">
+          <div class="field">
+            <label>Consommation sur la période</label>
+            <input type="number" inputmode="decimal" id="kwhDirect" class="kwh-input" placeholder="0" value="">
+            <div class="kwh-unit">kWh</div>
+          </div>
+        </div>
+
+        <!-- releves mode -->
+        <div id="mode-releves" style="display:none;">
+          <div class="field">
+            <label>Relevé précédent (kWh)</label>
+            <input type="number" inputmode="decimal" id="kwhPrev" placeholder="ex. 9200">
+          </div>
+          <div class="field">
+            <label>Relevé actuel (kWh)</label>
+            <div class="row">
+              <input type="number" inputmode="decimal" id="kwhCurr" placeholder="ex. 9338" style="flex:1;">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="scan-btn" id="scanBtn" style="flex:1;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M20 8V6a2 2 0 0 0-2-2h-2M20 16v2a2 2 0 0 1-2 2h-2"/><circle cx="12" cy="12" r="3.2"/></svg>
+              Prendre une photo
+            </button>
+            <button class="scan-btn" id="uploadBtn" style="flex:1;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+              Importer une photo
+            </button>
+          </div>
+          <div class="scan-hint">Prenez une photo du compteur, ou importez-en une depuis votre galerie — les deux tentent de lire les chiffres automatiquement. Vérifiez toujours le nombre reconnu — les afficheurs LCD sont difficiles à lire pour un algorithme.</div>
+          <div class="ocr-status" id="ocrStatus"><div class="spinner"></div><span id="ocrStatusText">Lecture du relevé…</span></div>
+          <input type="file" accept="image/*" capture="environment" id="cameraInput">
+          <input type="file" accept="image/*" id="uploadInput">
+          <canvas id="ocrCanvas"></canvas>
+          <div class="save-row">
+            <span id="deltaInfo">—</span>
+            <button class="btn btn-outline" id="saveReadingBtn" style="padding:8px 12px; font-size:12px;">💾 Enregistrer ce relevé</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="advancedCard">
+        <h2>Paramètres de la facture</h2>
+        <div class="field row" style="display:flex; gap:8px;">
+          <div style="flex:1;">
+            <label>Puissance souscrite</label>
+            <input type="number" inputmode="decimal" id="kvaInput" placeholder="kVA">
+          </div>
+          <div style="flex:1;">
+            <label>Période (mois)</label>
+            <select id="periodSelect">
+              <option value="1">1 mois</option>
+              <option value="2" selected>2 mois</option>
+              <option value="3">3 mois</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Estimation</h2>
+        <div class="total-block">
+          <div class="label">Total TTC</div>
+          <div class="amount" id="totalAmount">0<small> DT</small></div>
+        </div>
+        <div class="breakdown" id="breakdown"></div>
+
+        <div class="gauge-wrap">
+          <div class="gauge" id="gauge"></div>
+          <div class="gauge-labels" id="gaugeLabels"></div>
+        </div>
+        <div class="threshold-warn" id="thresholdWarn"></div>
+      </div>
+
+    </section>
+
+    <!-- ============ HISTORIQUE ============ -->
+    <section class="panel" id="panel-history">
+      <div class="card">
+        <h2>Relevés enregistrés</h2>
+        <div id="historyList"><div class="empty">Aucun relevé enregistré pour l'instant.</div></div>
+      </div>
+      <button class="btn btn-outline btn-full" id="clearHistoryBtn">Effacer l'historique</button>
+    </section>
+
+    <!-- ============ REGLAGES ============ -->
+    <section class="panel" id="panel-settings">
+
+      <div class="card">
+        <h2>Mode de calcul STEG</h2>
+        <div class="setting-row">
+          <div class="lbl">Tarification
+            <span class="hint">Palier : toute la consommation est facturée au tarif de la tranche atteinte (comportement observé sur les factures STEG). Progressif : chaque kWh est facturé au tarif de son propre palier.</span>
+          </div>
+        </div>
+        <select id="calcModeSelect" style="width:100%; margin-top:6px;">
+          <option value="palier">Palier (STEG — par défaut)</option>
+          <option value="progressif">Progressif par blocs</option>
+        </select>
+        <div class="setting-row" style="margin-top:8px;">
+          <div class="lbl">Éligible tranche économique
+            <span class="hint">Réservée aux abonnements ≤ 2 kVA</span>
+          </div>
+          <div class="toggle on" id="econToggle"><div class="knob"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Tranches — prix HT (millimes/kWh)</h2>
+        <div id="trancheList"></div>
+        <div class="note">Ces valeurs correspondent au barème STEG basse tension résidentiel en vigueur depuis le 1ᵉʳ mai 2022. Modifiez-les si la STEG publie une nouvelle grille.</div>
+      </div>
+
+      <div class="card">
+        <h2>Taxes &amp; redevances</h2>
+        <div class="setting-row">
+          <div class="lbl">Redevance puissance<span class="hint">millimes / kVA / mois</span></div>
+          <input type="number" id="cfgRedevance">
+        </div>
+        <div class="setting-row">
+          <div class="lbl">Surtaxe municipale<span class="hint">millimes / kWh</span></div>
+          <input type="number" id="cfgSurtaxe">
+        </div>
+        <div class="setting-row">
+          <div class="lbl">Taxe FTE<span class="hint">millimes / kWh, exonérée sous le seuil éco.</span></div>
+          <input type="number" id="cfgFte">
+        </div>
+        <div class="setting-row">
+          <div class="lbl">Seuil tranche économique<span class="hint">kWh / mois</span></div>
+          <input type="number" id="cfgEcoMax">
+        </div>
+        <div class="setting-row">
+          <div class="lbl">TVA réduite<span class="hint">% si conso. mensuelle ≤ seuil</span></div>
+          <input type="number" id="cfgTvaLow">
+        </div>
+        <div class="setting-row">
+          <div class="lbl">TVA normale<span class="hint">% au-delà</span></div>
+          <input type="number" id="cfgTvaHigh">
+        </div>
+        <div class="setting-row">
+          <div class="lbl">Seuil TVA<span class="hint">kWh / mois</span></div>
+          <input type="number" id="cfgTvaThreshold">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline btn-full" id="resetDefaultsBtn">Réinitialiser (tarifs officiels)</button>
+      </div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-accent btn-full" id="saveSettingsBtn">Enregistrer les réglages</button>
+      </div>
+
+      <div class="source-line">Barème STEG basse tension, en vigueur depuis le 01/05/2022.<br>Source : steg.com.tn — vérifiez votre facture réelle pour ajuster ces valeurs.</div>
+    </section>
+
+  </main>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-panel="panel-calc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+      Calculer
+    </button>
+    <button class="tab-btn" data-panel="panel-history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v5l3 2"/><circle cx="12" cy="13" r="8"/><path d="M9 2h6"/></svg>
+      Historique
+    </button>
+    <button class="tab-btn" data-panel="panel-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+      Réglages
+    </button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+
+  // ---------- default config (STEG basse tension résidentiel, 01/05/2022) ----------
+  function defaultConfig(){
+    return {
+      tranches: [
+        {max:50,  rate:62},
+        {max:100, rate:96},
+        {max:200, rate:176},
+        {max:300, rate:218},
+        {max:500, rate:341},
+        {max:Infinity, rate:414}
+      ],
+      redevanceRate: 700,   // mill / kVA / month
+      surtaxeRate: 5,       // mill / kWh
+      fteRate: 5,           // mill / kWh
+      economiqueMaxKwh: 100,// kWh / month
+      economiqueEligible: true,
+      tvaLow: 7,
+      tvaHigh: 13,
+      tvaThreshold: 300,
+      kva: 5,
+      periodMonths: 2,
+      calcMode: 'palier'
+    };
+  }
+
+  let cfg = defaultConfig();
+  let lastReading = null; // {value, date}
+
+  // ---------- storage helpers ----------
+  async function loadAll(){
+    try{
+      const c = await window.storage.get('config');
+      if(c && c.value) cfg = Object.assign(defaultConfig(), JSON.parse(c.value));
+    }catch(e){ /* no saved config yet */ }
+    try{
+      const r = await window.storage.get('lastReading');
+      if(r && r.value) lastReading = JSON.parse(r.value);
+    }catch(e){ /* none yet */ }
+  }
+
+  async function persistConfig(){
+    try{ await window.storage.set('config', JSON.stringify(cfg)); }
+    catch(e){ showToast("Impossible d'enregistrer les réglages."); }
+  }
+
+  async function persistLastReading(value){
+    lastReading = {value, date:new Date().toISOString()};
+    try{ await window.storage.set('lastReading', JSON.stringify(lastReading)); }
+    catch(e){ showToast("Impossible d'enregistrer le relevé."); }
+  }
+
+  async function pushHistory(entry){
+    let list = [];
+    try{
+      const h = await window.storage.get('history');
+      if(h && h.value) list = JSON.parse(h.value);
+    }catch(e){}
+    list.unshift(entry);
+    list = list.slice(0,12);
+    try{ await window.storage.set('history', JSON.stringify(list)); }catch(e){}
+    return list;
+  }
+
+  async function loadHistory(){
+    try{
+      const h = await window.storage.get('history');
+      if(h && h.value) return JSON.parse(h.value);
+    }catch(e){}
+    return [];
+  }
+
+  // ---------- calculation ----------
+  function findTrancheIndex(monthlyAvg){
+    for(let i=0;i<cfg.tranches.length;i++){
+      if(monthlyAvg <= cfg.tranches[i].max) return i;
+    }
+    return cfg.tranches.length-1;
+  }
+
+  function rateForIndex(i){
+    if(i<=1 && !cfg.economiqueEligible) return cfg.tranches[2].rate;
+    return cfg.tranches[i].rate;
+  }
+
+  function computeBill(kwhTotal){
+    const months = cfg.periodMonths || 1;
+    const monthlyAvg = kwhTotal / months;
+    let idx = findTrancheIndex(monthlyAvg);
+    if(idx<=1 && !cfg.economiqueEligible) idx = 2;
+    let rate = rateForIndex(idx);
+
+    let energyHT;
+    if(cfg.calcMode === 'palier'){
+      energyHT = kwhTotal * rate;
+    } else {
+      let remaining = monthlyAvg, prevMax = 0, monthlyCost = 0;
+      for(let i=0;i<cfg.tranches.length;i++){
+        const t = cfg.tranches[i];
+        const effRate = rateForIndex(i);
+        const band = Math.min(remaining, t.max - prevMax);
+        if(band > 0){ monthlyCost += band*effRate; remaining -= band; }
+        prevMax = t.max;
+        if(remaining<=0) break;
+      }
+      energyHT = monthlyCost * months;
+    }
+
+    const econApplies = cfg.economiqueEligible && (monthlyAvg <= cfg.economiqueMaxKwh);
+    const redevance = cfg.kva * cfg.redevanceRate * months;
+    const surtaxe = kwhTotal * cfg.surtaxeRate;
+    const fte = econApplies ? 0 : kwhTotal * cfg.fteRate;
+    const subtotalHT = energyHT + redevance + surtaxe + fte;
+    const tvaRate = monthlyAvg <= cfg.tvaThreshold ? cfg.tvaLow : cfg.tvaHigh;
+    const tva = subtotalHT * tvaRate/100;
+    const totalTTC = subtotalHT + tva;
+
+    return {idx, rate, monthlyAvg, energyHT, redevance, surtaxe, fte, subtotalHT, tvaRate, tva, totalTTC, econApplies};
+  }
+
+  function mDT(mill){ return (mill/1000).toLocaleString('fr-TN',{minimumFractionDigits:3, maximumFractionDigits:3}); }
+
+  // ---------- UI: calc panel ----------
+  const kwhDirect = document.getElementById('kwhDirect');
+  const kwhPrev = document.getElementById('kwhPrev');
+  const kwhCurr = document.getElementById('kwhCurr');
+  const kvaInput = document.getElementById('kvaInput');
+  const periodSelect = document.getElementById('periodSelect');
+  const deltaInfo = document.getElementById('deltaInfo');
+
+  let mode = 'direct';
+
+  function currentKwh(){
+    if(mode==='direct'){
+      const v = parseFloat(kwhDirect.value);
+      return isNaN(v) ? 0 : Math.max(0,v);
+    } else {
+      const p = parseFloat(kwhPrev.value), c = parseFloat(kwhCurr.value);
+      if(isNaN(p) || isNaN(c)) return 0;
+      return Math.max(0, c-p);
+    }
+  }
+
+  function renderBreakdown(b){
+    document.getElementById('totalAmount').innerHTML = mDT(b.totalTTC) + '<small> DT</small>';
+    const lines = [
+      ['Énergie ('+b.rate+' mill/kWh)', mDT(b.energyHT)+' DT'],
+      ['Redevance puissance', mDT(b.redevance)+' DT'],
+      ['Surtaxe municipale', mDT(b.surtaxe)+' DT'],
+      ['Taxe FTE'+(b.econApplies?' (exonérée)':''), mDT(b.fte)+' DT'],
+      ['Sous-total HT', mDT(b.subtotalHT)+' DT'],
+      ['TVA ('+b.tvaRate+'%)', mDT(b.tva)+' DT'],
+    ];
+    document.getElementById('breakdown').innerHTML = lines.map(([l,v])=>
+      `<div class="line"><span>${l}</span><span>${v}</span></div>`
+    ).join('') + `<div class="line total"><span>Total TTC</span><span>${mDT(b.totalTTC)} DT</span></div>`;
+  }
+
+  const trancheColors = ['#2e9c8f','#4fae72','#e8a33d','#e08a2e','#e4572e','#c81e3a'];
+  const trancheLabels = ['0–50','51–100','101–200','201–300','301–500','501+'];
+
+  function renderGauge(b, kwhTotal){
+    const gauge = document.getElementById('gauge');
+    const labels = document.getElementById('gaugeLabels');
+    gauge.innerHTML = ''; labels.innerHTML = '';
+    cfg.tranches.forEach((t,i)=>{
+      const seg = document.createElement('div');
+      seg.className = 'seg'+(i===b.idx?' active':'');
+      seg.style.background = trancheColors[i] || '#555';
+      gauge.appendChild(seg);
+      const lab = document.createElement('span');
+      lab.textContent = trancheLabels[i]||'';
+      labels.appendChild(lab);
+    });
+
+    const warn = document.getElementById('thresholdWarn');
+    if(b.idx < cfg.tranches.length-1 && kwhTotal>0){
+      const months = cfg.periodMonths||1;
+      const nextBoundaryMonthly = cfg.tranches[b.idx].max;
+      const kwhToNext = Math.ceil(nextBoundaryMonthly*months - kwhTotal) + 1;
+      if(kwhToNext>0 && kwhToNext<=20){
+        const nextIdx = b.idx+1;
+        const nextRate = rateForIndex(nextIdx);
+        const projectedKwh = kwhTotal + kwhToNext;
+        const projected = computeBillAtRate(projectedKwh, nextIdx);
+        warn.innerHTML = `<b>À ${kwhToNext} kWh de la tranche suivante</b> (${nextRate} mill/kWh). En la franchissant, le total TTC passerait à environ <b>${mDT(projected)} DT</b>.`;
+        warn.classList.add('show');
+      } else warn.classList.remove('show');
+    } else warn.classList.remove('show');
+  }
+
+  function computeBillAtRate(kwhTotal, idxOverride){
+    const months = cfg.periodMonths||1;
+    const monthlyAvg = kwhTotal/months;
+    const rate = rateForIndex(idxOverride);
+    const energyHT = kwhTotal*rate; // palier logic for the warning, matches STEG's cliff behaviour
+    const econApplies = cfg.economiqueEligible && (monthlyAvg <= cfg.economiqueMaxKwh);
+    const redevance = cfg.kva*cfg.redevanceRate*months;
+    const surtaxe = kwhTotal*cfg.surtaxeRate;
+    const fte = econApplies?0:kwhTotal*cfg.fteRate;
+    const subtotalHT = energyHT+redevance+surtaxe+fte;
+    const tvaRate = monthlyAvg<=cfg.tvaThreshold?cfg.tvaLow:cfg.tvaHigh;
+    return subtotalHT + subtotalHT*tvaRate/100;
+  }
+
+  function recalc(){
+    const kwhTotal = currentKwh();
+    const b = computeBill(kwhTotal);
+    renderBreakdown(b);
+    renderGauge(b, kwhTotal);
+    if(mode==='releves'){
+      const p = parseFloat(kwhPrev.value), c = parseFloat(kwhCurr.value);
+      if(!isNaN(p) && !isNaN(c) && c>=p) deltaInfo.textContent = 'Consommation : '+(c-p)+' kWh';
+      else deltaInfo.textContent = '—';
+    }
+  }
+
+  document.querySelectorAll('#modeSwitch button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#modeSwitch button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      document.getElementById('mode-direct').style.display = mode==='direct' ? 'block':'none';
+      document.getElementById('mode-releves').style.display = mode==='releves' ? 'block':'none';
+      recalc();
+    });
+  });
+
+  [kwhDirect, kwhPrev, kwhCurr].forEach(el=>el.addEventListener('input', recalc));
+  kvaInput.addEventListener('input', ()=>{ const v=parseFloat(kvaInput.value); if(!isNaN(v)){cfg.kva=v; persistConfig(); recalc();} });
+  periodSelect.addEventListener('change', ()=>{ cfg.periodMonths=parseInt(periodSelect.value,10); persistConfig(); recalc(); });
+
+  document.getElementById('saveReadingBtn').addEventListener('click', async ()=>{
+    const c = parseFloat(kwhCurr.value);
+    if(isNaN(c)){ showToast('Entrez un relevé actuel valide.'); return; }
+    const kwhTotal = currentKwh();
+    const b = computeBill(kwhTotal);
+    await persistLastReading(c);
+    await pushHistory({date:new Date().toLocaleDateString('fr-TN'), kwh:kwhTotal, total:b.totalTTC});
+    showToast('Relevé enregistré ✓');
+    renderHistory();
+  });
+
+  // ---------- camera / OCR ----------
+  const cameraInput = document.getElementById('cameraInput');
+  const ocrCanvas = document.getElementById('ocrCanvas');
+  const ocrStatus = document.getElementById('ocrStatus');
+  const ocrStatusText = document.getElementById('ocrStatusText');
+  let tesseractLoaded = false;
+
+  const uploadInput = document.getElementById('uploadInput');
+
+  document.getElementById('scanBtn').addEventListener('click', ()=> cameraInput.click());
+  document.getElementById('uploadBtn').addEventListener('click', ()=> uploadInput.click());
+
+  function loadTesseract(){
+    return new Promise((resolve,reject)=>{
+      if(window.Tesseract){ resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.1/tesseract.min.js';
+      s.onload = ()=>resolve();
+      s.onerror = ()=>reject(new Error('load-failed'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function processImageFile(file){
+    if(!file) return;
+    ocrStatus.classList.add('show');
+    ocrStatusText.textContent = "Préparation de l'image…";
+    try{
+      const imgUrl = URL.createObjectURL(file);
+      const img = new Image();
+      await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=imgUrl; });
+      URL.revokeObjectURL(imgUrl);
+
+      // draw + crop to a wide center band (meter digit windows are wide & short) + boost contrast
+      const cw = 900;
+      const ch = Math.round(cw * img.height/img.width);
+      ocrCanvas.width = cw; ocrCanvas.height = ch;
+      const ctx = ocrCanvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, cw, ch);
+      const imgData = ctx.getImageData(0,0,cw,ch);
+      const d = imgData.data;
+      for(let i=0;i<d.length;i+=4){
+        const gray = 0.34*d[i] + 0.5*d[i+1] + 0.16*d[i+2];
+        const v = gray > 110 ? 255 : 0; // simple threshold, LCD digits are usually dark on light
+        d[i]=d[i+1]=d[i+2]=v;
+      }
+      ctx.putImageData(imgData,0,0);
+
+      if(!tesseractLoaded){
+        ocrStatusText.textContent = 'Chargement du lecteur…';
+        await loadTesseract();
+        tesseractLoaded = true;
+      }
+      ocrStatusText.textContent = 'Lecture des chiffres…';
+      const { data } = await Tesseract.recognize(ocrCanvas, 'eng', {
+        tessedit_char_whitelist: '0123456789'
+      });
+      const digits = (data.text||'').replace(/[^0-9]/g,'');
+      ocrStatus.classList.remove('show');
+      if(digits.length>=3){
+        kwhCurr.value = digits;
+        showToast('Relevé détecté : '+digits+' — vérifiez avant de valider');
+      } else {
+        showToast("Chiffres non reconnus, entrez le relevé manuellement.");
+      }
+      kwhCurr.focus();
+      recalc();
+    }catch(err){
+      ocrStatus.classList.remove('show');
+      showToast("La lecture automatique a échoué. Entrez le relevé manuellement.");
+      kwhCurr.focus();
+    }
+  }
+
+  cameraInput.addEventListener('change', (e)=>{
+    const file = e.target.files && e.target.files[0];
+    processImageFile(file);
+    cameraInput.value = '';
+  });
+
+  uploadInput.addEventListener('change', (e)=>{
+    const file = e.target.files && e.target.files[0];
+    processImageFile(file);
+    uploadInput.value = '';
+  });
+
+  // ---------- history ----------
+  async function renderHistory(){
+    const list = await loadHistory();
+    const el = document.getElementById('historyList');
+    if(!list.length){ el.innerHTML = "<div class=\"empty\">Aucun relevé enregistré pour l'instant.</div>"; return; }
+    el.innerHTML = list.map(h=>
+      `<div class="hist-item"><div><div class="d">${h.date}</div><div class="k">${h.kwh} kWh</div></div><div class="t">${mDT(h.total)} DT</div></div>`
+    ).join('');
+  }
+  document.getElementById('clearHistoryBtn').addEventListener('click', async ()=>{
+    try{ await window.storage.delete('history'); }catch(e){}
+    renderHistory();
+    showToast('Historique effacé');
+  });
+
+  // ---------- settings panel ----------
+  function renderTrancheInputs(){
+    const wrap = document.getElementById('trancheList');
+    wrap.innerHTML = cfg.tranches.map((t,i)=>`
+      <div class="tranche-row">
+        <div class="range">${trancheLabels[i]} kWh/mois</div>
+        <input type="number" data-idx="${i}" class="tranche-rate" value="${t.rate}">
+      </div>`).join('');
+    wrap.querySelectorAll('.tranche-rate').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const i = parseInt(inp.dataset.idx,10);
+        const v = parseFloat(inp.value);
+        if(!isNaN(v)) cfg.tranches[i].rate = v;
+      });
+    });
+  }
+
+  function fillSettingsForm(){
+    document.getElementById('calcModeSelect').value = cfg.calcMode;
+    document.getElementById('econToggle').classList.toggle('on', cfg.economiqueEligible);
+    document.getElementById('cfgRedevance').value = cfg.redevanceRate;
+    document.getElementById('cfgSurtaxe').value = cfg.surtaxeRate;
+    document.getElementById('cfgFte').value = cfg.fteRate;
+    document.getElementById('cfgEcoMax').value = cfg.economiqueMaxKwh;
+    document.getElementById('cfgTvaLow').value = cfg.tvaLow;
+    document.getElementById('cfgTvaHigh').value = cfg.tvaHigh;
+    document.getElementById('cfgTvaThreshold').value = cfg.tvaThreshold;
+    kvaInput.value = cfg.kva;
+    periodSelect.value = String(cfg.periodMonths);
+    renderTrancheInputs();
+  }
+
+  document.getElementById('econToggle').addEventListener('click', function(){
+    cfg.economiqueEligible = !cfg.economiqueEligible;
+    this.classList.toggle('on', cfg.economiqueEligible);
+  });
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
+    cfg.calcMode = document.getElementById('calcModeSelect').value;
+    cfg.redevanceRate = parseFloat(document.getElementById('cfgRedevance').value)||cfg.redevanceRate;
+    cfg.surtaxeRate = parseFloat(document.getElementById('cfgSurtaxe').value)||cfg.surtaxeRate;
+    cfg.fteRate = parseFloat(document.getElementById('cfgFte').value)||cfg.fteRate;
+    cfg.economiqueMaxKwh = parseFloat(document.getElementById('cfgEcoMax').value)||cfg.economiqueMaxKwh;
+    cfg.tvaLow = parseFloat(document.getElementById('cfgTvaLow').value)||cfg.tvaLow;
+    cfg.tvaHigh = parseFloat(document.getElementById('cfgTvaHigh').value)||cfg.tvaHigh;
+    cfg.tvaThreshold = parseFloat(document.getElementById('cfgTvaThreshold').value)||cfg.tvaThreshold;
+    await persistConfig();
+    showToast('Réglages enregistrés ✓');
+    recalc();
+  });
+
+  document.getElementById('resetDefaultsBtn').addEventListener('click', async ()=>{
+    cfg = defaultConfig();
+    fillSettingsForm();
+    await persistConfig();
+    showToast('Tarifs officiels STEG restaurés');
+    recalc();
+  });
+
+  // ---------- tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.panel).classList.add('active');
+      if(btn.dataset.panel==='panel-history') renderHistory();
+    });
+  });
+
+  // ---------- toast ----------
+  let toastTimer;
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+
+  // ---------- init ----------
+  (async function init(){
+    await loadAll();
+    fillSettingsForm();
+    if(lastReading && lastReading.value){
+      kwhPrev.value = lastReading.value;
+    }
+    recalc();
+  })();
+
+})();
+</script>
+</body>
+</html>
