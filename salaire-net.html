@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salaire Net Tunisie</title>
+<meta name="description" content="Calculateur brut → net (et net → brut) pour salariés en Tunisie : CNSS 9,68 %, barème IRPP 2025/2026 à 8 tranches, CSS 0,5 %.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --encre:#1B3AA0;
+    --encre-fonce:#0E2064;
+    --encre-pale:rgba(27,58,160,.08);
+    --trait:rgba(27,58,160,.28);
+    --papier:#FFFFFF;
+    --champ:#fbfcff;
+    --fond:#DFE3EE;
+    --rouge:#B5121B;
+    --ambre:#A96A0C;
+    --muted:#5C6890;
+    --ok:#0F6D4E;
+    --band-fg:#fff;
+    --r:3px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --encre:#8FA6F0;--encre-fonce:#E4E9FA;--encre-pale:rgba(143,166,240,.10);
+      --trait:rgba(143,166,240,.28);--papier:#141A2E;--champ:#0F1426;--fond:#0A0E1C;
+      --rouge:#F07078;--ambre:#E0A84A;--muted:#9AA5C8;--ok:#5BC79E;--band-fg:#0A0E1C;
+    }
+  }
+  :root[data-theme="dark"]{
+    --encre:#8FA6F0;--encre-fonce:#E4E9FA;--encre-pale:rgba(143,166,240,.10);
+    --trait:rgba(143,166,240,.28);--papier:#141A2E;--champ:#0F1426;--fond:#0A0E1C;
+    --rouge:#F07078;--ambre:#E0A84A;--muted:#9AA5C8;--ok:#5BC79E;--band-fg:#0A0E1C;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--fond);
+    background-image:repeating-linear-gradient(0deg,var(--encre-pale) 0 1px,transparent 1px 26px);
+    color:var(--encre-fonce);
+    font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+  .masthead{background:var(--encre);color:var(--band-fg);padding:18px 16px 16px;border-bottom:4px double rgba(255,255,255,.5)}
+  .masthead .row{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;justify-content:space-between}
+  .masthead h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+  .masthead p{margin:6px 0 0;font-size:13px;opacity:.88;max-width:60ch}
+  .stamp{border:1.5px solid currentColor;border-radius:2px;padding:6px 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;transform:rotate(-1.2deg);opacity:.85;text-align:center;line-height:1.5}
+
+  .shell{max-width:1180px;margin:0 auto;padding:22px 16px;display:grid;grid-template-columns:360px minmax(0,1fr);gap:22px;align-items:start}
+  @media(max-width:960px){.shell{grid-template-columns:1fr;padding:14px 16px}}
+
+  .panel{background:var(--papier);border:1px solid var(--trait);border-radius:var(--r)}
+  .controls{position:sticky;top:16px}
+  @media(max-width:960px){.controls{position:static}}
+  .band{background:var(--encre);color:var(--band-fg);padding:7px 12px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+  .grp{padding:14px 14px 16px;border-bottom:1px dashed var(--trait)}
+  .grp:last-child{border-bottom:0}
+  .grp h3{margin:0 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .f{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+  .f:last-child{margin-bottom:0}
+  .f label{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+  input[type=number]{
+    font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:16px;padding:9px 10px;
+    border:1px solid var(--trait);border-radius:2px;background:var(--champ);color:var(--encre-fonce);width:100%;
+  }
+  input.big{font-size:22px;font-weight:600}
+  input:focus,button:focus-visible{outline:2px solid var(--rouge);outline-offset:1px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--trait);border-radius:2px;overflow:hidden}
+  .seg button{font:inherit;font-size:13px;padding:9px 6px;background:var(--champ);color:var(--muted);border:0;cursor:pointer;border-right:1px solid var(--trait)}
+  .seg button:last-child{border-right:0}
+  .seg button[aria-pressed=true]{background:var(--encre);color:var(--band-fg);font-weight:600}
+  .check{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer}
+  .check input{width:16px;height:16px;accent-color:var(--encre)}
+  .note{font-size:12px;color:var(--muted);margin:8px 0 0}
+
+  /* hero */
+  .hero{padding:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px}
+  @media(max-width:620px){.hero{grid-template-columns:1fr}}
+  .kpi .lbl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .kpi .val{font-size:28px;font-weight:600;margin-top:2px;overflow-wrap:anywhere}
+  .kpi .val small{font-size:13px;font-weight:400;color:var(--muted)}
+  .kpi .sub{font-size:12px;color:var(--muted)}
+  .kpi.main .val{color:var(--ok);font-size:34px}
+
+  /* split bar */
+  .split{padding:14px 18px 18px;margin-bottom:22px}
+  .split h2,.card h2{margin:0 0 10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .sbar{display:flex;height:22px;border:1px solid var(--trait);border-radius:2px;overflow:hidden}
+  .sbar span{display:block;height:100%;transition:width .25s}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:12.5px}
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:1px;vertical-align:-1px}
+  .c-net{background:var(--ok)} .c-cnss{background:var(--encre)} .c-irpp{background:var(--rouge)} .c-css{background:var(--ambre)}
+
+  /* payslip */
+  .card{padding:14px 18px 16px;margin-bottom:22px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:7px 6px;text-align:right;border-bottom:1px dotted var(--trait)}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  td.m{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.minus td.m{color:var(--rouge)}
+  tr.tot td{font-weight:700;border-top:2px solid var(--encre);border-bottom:0}
+  tr.tot td.m{color:var(--ok)}
+  tr.sub td{color:var(--muted);font-size:13px}
+  .scroll{overflow-x:auto}
+
+  /* brackets */
+  .br-row{display:grid;grid-template-columns:128px 44px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13px;padding:4px 0}
+  @media(max-width:520px){.br-row{grid-template-columns:96px 38px minmax(0,1fr) 78px;font-size:12px}}
+  .br-track{height:12px;background:var(--encre-pale);border:1px solid var(--trait);border-radius:2px;overflow:hidden}
+  .br-fill{height:100%;background:var(--rouge);opacity:.85;transition:width .25s}
+  .br-row.cur{font-weight:700}
+  .br-row .tax{text-align:right}
+  .marg{margin-top:10px;font-size:13px;color:var(--muted)}
+
+  .rules{font-size:13.5px}
+  .rules ul{margin:0;padding-left:18px}
+  .rules li{margin:4px 0}
+  footer{max-width:1180px;margin:0 auto;padding:0 16px 30px;font-size:12px;color:var(--muted)}
+  footer a{color:var(--encre)}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="row">
+    <div>
+      <h1>Salaire net · Tunisie</h1>
+      <p>Du brut au net (ou l'inverse) : CNSS, IRPP et CSS, ligne par ligne comme sur votre fiche de paie.</p>
+    </div>
+    <div class="stamp">Barème LF 2025<br>CSS LF 2026</div>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="panel controls" aria-label="Paramètres">
+    <div class="band">Paramètres</div>
+    <div class="grp">
+      <h3>Mode</h3>
+      <div class="seg" role="group" aria-label="Sens du calcul">
+        <button type="button" id="m-gross" aria-pressed="true">Brut → Net</button>
+        <button type="button" id="m-net" aria-pressed="false">Net → Brut</button>
+      </div>
+      <div class="f" style="margin-top:12px">
+        <label for="amount"><span id="amount-lbl">Salaire brut mensuel</span><span>TND</span></label>
+        <input id="amount" class="big" type="number" min="0" step="10" value="3000" inputmode="decimal">
+      </div>
+      <div class="seg" role="group" aria-label="Période">
+        <button type="button" id="p-month" aria-pressed="true">Mensuel</button>
+        <button type="button" id="p-year" aria-pressed="false">Annuel (÷12)</button>
+      </div>
+    </div>
+    <div class="grp">
+      <h3>Situation familiale</h3>
+      <label class="check"><input type="checkbox" id="chef"> Chef de famille (marié·e)</label>
+      <div class="two" style="margin-top:12px">
+        <div class="f">
+          <label for="kids">Enfants à charge</label>
+          <input id="kids" type="number" min="0" max="4" step="1" value="0">
+        </div>
+        <div class="f">
+          <label for="students">dont étudiants</label>
+          <input id="students" type="number" min="0" max="4" step="1" value="0">
+        </div>
+      </div>
+      <p class="note">Les déductions pour enfants ne s'appliquent qu'au chef de famille, dans la limite des 4 premiers enfants. Étudiant = enseignement supérieur, sans bourse, moins de 25 ans.</p>
+    </div>
+    <div class="grp">
+      <h3>Taux</h3>
+      <div class="two">
+        <div class="f">
+          <label for="cnss">CNSS salarié</label>
+          <input id="cnss" type="number" min="0" max="30" step="0.01" value="9.68">
+        </div>
+        <div class="f">
+          <label for="cssr">CSS</label>
+          <input id="cssr" type="number" min="0" max="5" step="0.1" value="0.5">
+        </div>
+      </div>
+      <p class="note">9,68 % = 9,18 % + 0,5 % assurance perte d'emploi (depuis 2025). CSS réduite à 0,5 % par la LF 2026.</p>
+    </div>
+  </section>
+
+  <section aria-live="polite">
+    <div class="panel hero">
+      <div class="kpi main">
+        <div class="lbl">Net mensuel</div>
+        <div class="val mono" id="k-net">–</div>
+        <div class="sub mono" id="k-net-y"></div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Brut mensuel</div>
+        <div class="val mono" id="k-gross">–</div>
+        <div class="sub mono" id="k-gross-y"></div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Net / brut</div>
+        <div class="val mono" id="k-ratio">–</div>
+        <div class="sub" id="k-marg"></div>
+      </div>
+    </div>
+
+    <div class="panel split">
+      <h2>Où va votre brut</h2>
+      <div class="sbar" id="sbar"><span class="c-net"></span><span class="c-cnss"></span><span class="c-irpp"></span><span class="c-css"></span></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="panel card">
+      <h2>Fiche de paie simplifiée</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Ligne</th><th>Mensuel</th><th>Annuel</th></tr></thead>
+          <tbody id="slip"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel card">
+      <h2>IRPP par tranche (revenu net imposable annuel)</h2>
+      <div id="brackets"></div>
+      <div class="marg" id="marg"></div>
+    </div>
+
+    <div class="panel card rules">
+      <h2>Comment c'est calculé</h2>
+      <ul>
+        <li><b>CNSS</b> : 9,68 % du brut, retenue à la source, sans plafond.</li>
+        <li><b>Salaire imposable</b> = brut − CNSS.</li>
+        <li><b>Frais professionnels</b> : 10 % du salaire imposable annuel, plafonnés à 2 000 TND/an.</li>
+        <li><b>Déductions familiales</b> : chef de famille 300 TND/an ; enfant 100 TND/an (4 max) ; enfant étudiant sans bourse 1 000 TND/an (au lieu de 100).</li>
+        <li><b>Revenu net imposable</b> = salaire imposable annuel − frais professionnels − déductions.</li>
+        <li><b>IRPP</b> (barème LF 2025, reconduit en 2026) : 0 % jusqu'à 5 000 ; 15 % → 10 000 ; 25 % → 20 000 ; 30 % → 30 000 ; 33 % → 40 000 ; 36 % → 50 000 ; 38 % → 70 000 ; 40 % au-delà. Retenue mensuelle = IRPP annuel ÷ 12.</li>
+        <li><b>CSS</b> : 0,5 % du revenu net imposable annuel, non due si ce revenu ne dépasse pas 5 000 TND.</li>
+        <li><b>Net</b> = brut − CNSS − IRPP − CSS.</li>
+      </ul>
+      <p class="note">Estimation indicative : primes non récurrentes, avantages en nature, régimes particuliers (CAVIS, fonction publique, parents à charge, enfant handicapé) et régularisations annuelles ne sont pas pris en compte. Les taux CNSS et CSS sont modifiables ci-contre si la loi change.</p>
+    </div>
+  </section>
+</main>
+<footer>Calcul effectué entièrement dans votre navigateur. Aucune donnée n'est envoyée.</footer>
+
+<script>
+(function(){
+  const BRACKETS=[[5000,0],[10000,.15],[20000,.25],[30000,.30],[40000,.33],[50000,.36],[70000,.38],[Infinity,.40]];
+  const FP_RATE=.10, FP_CAP=2000, CHEF=300, KID=100, STUDENT=1000, CSS_EXEMPT=5000;
+  const $=id=>document.getElementById(id);
+  const state={mode:'gross',period:'month'};
+
+  const fmt=(v,d=3)=>v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const num=(id,def=0)=>{const v=parseFloat($(id).value);return isFinite(v)&&v>=0?v:def};
+
+  function irpp(base){
+    let tax=0,lo=0;const parts=[];
+    for(const [hi,r] of BRACKETS){
+      const slice=Math.max(0,Math.min(base,hi)-lo);
+      parts.push({lo,hi,r,slice,tax:slice*r});
+      tax+=slice*r;lo=hi;
+    }
+    return {tax,parts};
+  }
+
+  function compute(grossM,o){
+    const gY=grossM*12;
+    const cnssY=gY*o.cnss;
+    const imposY=gY-cnssY;
+    const fpY=Math.min(imposY*FP_RATE,FP_CAP);
+    let dedY=0;
+    if(o.chef){
+      const kids=Math.min(o.kids,4), st=Math.min(o.students,kids);
+      dedY=CHEF+(kids-st)*KID+st*STUDENT;
+    }
+    const baseY=Math.max(0,imposY-fpY-dedY);
+    const ir=irpp(baseY);
+    const cssY=baseY>CSS_EXEMPT?baseY*o.css:0;
+    const netY=gY-cnssY-ir.tax-cssY;
+    return {gY,cnssY,imposY,fpY,dedY,baseY,irY:ir.tax,parts:ir.parts,cssY,netY};
+  }
+
+  function grossFromNet(netM,o){
+    let lo=netM, hi=netM*3+100;
+    while(compute(hi,o).netY/12<netM) hi*=2;
+    for(let i=0;i<80;i++){const mid=(lo+hi)/2; if(compute(mid,o).netY/12<netM) lo=mid; else hi=mid;}
+    return hi;
+  }
+
+  function marginal(r,o,grossM){
+    const d=10, a=compute(grossM,o), b=compute(grossM+d,o);
+    return 1-(b.netY-a.netY)/(12*d);
+  }
+
+  function render(){
+    const o={cnss:num('cnss',9.68)/100,css:num('cssr',.5)/100,chef:$('chef').checked,kids:Math.floor(num('kids')),students:Math.floor(num('students'))};
+    let amt=num('amount'); if(state.period==='year') amt/=12;
+    const grossM=state.mode==='gross'?amt:grossFromNet(amt,o);
+    const r=compute(grossM,o);
+    const m=v=>v/12;
+
+    $('k-net').innerHTML=fmt(m(r.netY))+' <small>TND</small>';
+    $('k-net-y').textContent=fmt(r.netY)+' TND / an';
+    $('k-gross').innerHTML=fmt(grossM)+' <small>TND</small>';
+    $('k-gross-y').textContent=fmt(r.gY)+' TND / an';
+    $('k-ratio').textContent=r.gY>0?fmt(100*r.netY/r.gY,1)+' %':'–';
+    const mg=marginal(r,o,grossM);
+    $('k-marg').textContent=grossM>0?'Sur 100 TND brut en plus, vous gardez '+fmt(100*(1-mg),1)+' TND':'';
+
+    const tot=r.gY||1, segs=[[r.netY,'Net','c-net'],[r.cnssY,'CNSS','c-cnss'],[r.irY,'IRPP','c-irpp'],[r.cssY,'CSS','c-css']];
+    const spans=$('sbar').children;
+    segs.forEach((s,i)=>{spans[i].style.width=(100*s[0]/tot)+'%'});
+    $('legend').innerHTML=segs.map(s=>`<span><i class="${s[2]}"></i>${s[1]} <span class="mono">${fmt(m(s[0]))}</span> (${fmt(100*s[0]/tot,1)} %)</span>`).join('');
+
+    const row=(lbl,y,cls='')=>`<tr class="${cls}"><td>${lbl}</td><td class="m">${cls==='minus'?'− ':''}${fmt(m(y))}</td><td class="m">${cls==='minus'?'− ':''}${fmt(y)}</td></tr>`;
+    $('slip').innerHTML=
+      row('Salaire brut',r.gY)+
+      row('CNSS ('+fmt(o.cnss*100,2)+' %)',r.cnssY,'minus')+
+      row('Salaire imposable',r.imposY,'sub')+
+      row('Frais professionnels (10 %, max 2 000/an)',r.fpY,'sub')+
+      row('Déductions familiales',r.dedY,'sub')+
+      row('Revenu net imposable',r.baseY,'sub')+
+      row('IRPP',r.irY,'minus')+
+      row('CSS ('+fmt(o.css*100,1)+' %)',r.cssY,'minus')+
+      row('Salaire net',r.netY,'tot');
+
+    const maxTax=Math.max(1,...r.parts.map(p=>p.tax));
+    let curIdx=r.parts.findIndex(p=>r.baseY<=p.hi);
+    $('brackets').innerHTML=r.parts.map((p,i)=>{
+      const lbl=p.hi===Infinity?'> '+(p.lo/1000)+' k':(p.lo/1000)+'–'+(p.hi/1000)+' k';
+      return `<div class="br-row${i===curIdx&&r.baseY>0?' cur':''}"><span class="mono">${lbl}</span><span class="mono">${Math.round(p.r*100)} %</span><div class="br-track"><div class="br-fill" style="width:${100*p.tax/maxTax}%"></div></div><span class="mono tax">${fmt(p.tax,0)}</span></div>`;
+    }).join('');
+    $('marg').textContent=r.baseY>0?`Revenu net imposable : ${fmt(r.baseY,0)} TND/an → tranche marginale ${Math.round(r.parts[curIdx].r*100)} %, taux moyen IRPP ${fmt(100*r.irY/r.gY,1)} % du brut.`:'';
+  }
+
+  function toggle(a,b,key,val){
+    $(a).setAttribute('aria-pressed','true');$(b).setAttribute('aria-pressed','false');state[key]=val;
+    $('amount-lbl').textContent=(state.mode==='gross'?'Salaire brut':'Salaire net souhaité')+(state.period==='month'?' mensuel':' annuel');
+    render();
+  }
+  $('m-gross').onclick=()=>toggle('m-gross','m-net','mode','gross');
+  $('m-net').onclick=()=>toggle('m-net','m-gross','mode','net');
+  $('p-month').onclick=()=>toggle('p-month','p-year','period','month');
+  $('p-year').onclick=()=>toggle('p-year','p-month','period','year');
+  ['amount','kids','students','cnss','cssr','chef'].forEach(id=>$(id).addEventListener('input',render));
+  render();
+})();
+</script>
+</body>
+</html>
